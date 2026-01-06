@@ -12,7 +12,7 @@ interface TaskCardProps {
     projectColor?: string;
   };
   hasFixedProject: boolean;
-  onUpdate?: () => void;
+  onUpdate?: (updatedTask: Partial<Checklist> & { id: string }) => void;
   onDragStart?: (taskId: string) => void;
 }
 
@@ -60,7 +60,15 @@ export default function TaskCard({
       if (error) throw error;
 
       setIsEditing(null);
-      if (onUpdate) onUpdate();
+      if (onUpdate) {
+        onUpdate({
+          id: task.id,
+          task_description: editedTask.task_description,
+          task_deadline: editedTask.task_deadline,
+          task_status: editedTask.task_status,
+          task_bucket: editedTask.task_bucket
+        });
+      }
     } catch (err) {
       console.error('Error updating task:', err);
     }
@@ -69,16 +77,26 @@ export default function TaskCard({
   const handleToggleComplete = async () => {
     try {
       const supabase = createClient();
+      const newCompletedState = !task.task_completed;
+      const newStatus = newCompletedState ? 'completed' : 'pending';
+      
       const { error } = await supabase
         .from('checklist')
         .update({ 
-          task_completed: !task.task_completed,
-          task_status: !task.task_completed ? 'completed' : 'pending'
+          task_completed: newCompletedState,
+          task_status: newStatus
         })
         .eq('id', task.id);
 
       if (error) throw error;
-      if (onUpdate) onUpdate();
+      
+      if (onUpdate) {
+        onUpdate({
+          id: task.id,
+          task_completed: newCompletedState,
+          task_status: newStatus
+        });
+      }
     } catch (err) {
       console.error('Error toggling completion:', err);
     }
@@ -155,7 +173,7 @@ export default function TaskCard({
                     <p className='no-text-spacing'>{task.projectName}</p>
                 </div>
             )}
-            <div>
+            <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
             {isEditing === 'deadline' ? (
             <div onClick={(e) => e.stopPropagation()}>
                 <SelectableCalendar
@@ -165,7 +183,7 @@ export default function TaskCard({
                 />
             </div>
             ) : (
-            <div className='deadline-date' onClick={() => setIsEditing('deadline')} >
+            <div className='deadline-date' onClick={(e) => { e.stopPropagation(); setIsEditing('deadline'); }} style={{ cursor: 'pointer' }}>
                 {editedTask.task_deadline ? ( <p className='no-text-spacing small-text'> {getDaysTillDeadline(editedTask.task_deadline)}</p> ) : ( <span>📅</span> )}
             </div>
             )}

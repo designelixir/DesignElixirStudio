@@ -368,20 +368,20 @@ export default function TimeTrackerBar({ onEntrySaved }: TimeTrackerBarProps) {
 
   return (
     <div id="timeTracker">
-      <div className="time-tracker-wrapper flex-center-spacebetween flex-wrap" style={{border: error ? '2px solid red' : '2px solid #E7E8E8'}}>
-        <div className="flex-center-start full-width">
+      <div className="time-tracker-wrapper flex-center-spacebetween" style={{border: error ? '2px solid red' : '2px solid #E7E8E8'}}>
+        <div className="time-bar-input-wrapper flex-center-start full-width">
           <input className='time-bar-input' value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What are you working on?" style={{width: '40%'}}/>
           <SearchAndSelectClient selectedClient={selectedClient} onClientSelect={setSelectedClient} />
           <SelectableCalendar value={originalStartTime} onChange={handleStartTimeChange} label="Start Time" disabled={!isRecording} />
           <button onClick={toggleBillable} className="time-bar-input system-button" style={{ opacity: billable ? '1' : '0.25', fontSize: '32px', lineHeight: '0', marginTop: '2px', color: billable ? 'green' : 'black' }} > $ </button>
           <div className="circle" style={{ backgroundColor: storageMode === 'online' ? '#4CAF50' : '#FFD700' }} title={storageMode === 'online' ? 'Stored online' : 'Stored locally'} />
+          
         </div>
         <div className="flex-center-end">
           <div className="time-tracker-time"> {formatTime(elapsedSeconds)}</div>
           <button onClick={handleStartOrSave} style={{ backgroundColor: isRecording ? '#4CAF50' : '#2196F3', }} >
             {isRecording ? 'Save Entry' : 'Start Timer'}
           </button>
-          
           {isRecording && (
             <button onClick={handleDelete} className='time-bar-input system-button' title="Delete entry" >
               <Image src="/trash.svg" alt="trash icon" width={25} height={25} />

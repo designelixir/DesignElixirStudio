@@ -131,8 +131,14 @@ export default function TaskList({ projectId, tableTitle, showCreateButton = tru
     fetchTasks();
   };
 
-  const handleTaskUpdate = () => {
-    fetchTasks();
+  const handleTaskUpdate = (updatedTask: Partial<Checklist> & { id: string }) => {
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === updatedTask.id
+          ? { ...task, ...updatedTask }
+          : task
+      )
+    );
   };
 
   const getTasksByBucket = (bucket: TaskBucket) => {

@@ -22,7 +22,7 @@
 html {max-width: 100vw; overflow-x: hidden; background-image: url('/burst.png'); background-origin: center bottom; background-size: cover; background-repeat: no-repeat; background-color: var(--navy); max-height: 100vh; padding: 10px; }
 body {width: 100%; margin: 0px; max-height: 100vh; height: calc(100vh - 20px); }
 main {width: 100%; margin: 0px; overflow-y: scroll;  height: calc(100vh - 22px);  border-radius: var(--br);}
-section {background: var(--opaque-white);   border-radius: var(--br);}
+section {background: var(--opaque-white);   border-radius: var(--br); overflow-x: scroll;}
 
 @media screen and (max-width: 850px) {
   body {flex-direction: column; }
@@ -154,7 +154,9 @@ td h3 {font-weight: 400;}
 .circle-wrapper {display: flex; align-items: center; gap: 8px; white-space: nowrap;}
 
 .time-tracker-time {font-size: 24px; font-weight: bold; padding: 0 15px; }
-.time-bar-input {border: 2px solid white; background: white; padding: 10px!important; border-radius: unset!important; height: 50px; white-space: nowrap;}
+
+.time-bar-input {border: 2px solid white; background: white; padding: 10px!important; border-radius: unset!important; height: 50px; white-space: nowrap; }
+.time-bar-input input {min-width: 350px;}
 .time-tracker-wrapper {background: white; border-radius: var(--br); }
 .calculated-time-wrapper {background: white; margin-bottom: 10px; border-radius: var(--br); padding: 10px;}
 
