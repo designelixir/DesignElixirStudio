@@ -1,26 +1,28 @@
 {
-  "name": "designelixirtools",
+  "name": "design-elixir",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^7.1.0",
-    "@fortawesome/free-solid-svg-icons": "^7.1.0",
-    "@fortawesome/react-fontawesome": "^3.1.1",
-    "@supabase/ssr": "^0.7.0",
-    "lucide-react": "^0.544.0",
-    "next": "^15.5.9",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "@react-pdf/renderer": "^4.3.2",
+    "@supabase/ssr": "^0.10.0",
+    "@supabase/supabase-js": "^2.101.1",
+    "next": "^16.2.3",
+    "next-auth": "^5.0.0-beta.30",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.1",
     "typescript": "^5"
   }
 }
