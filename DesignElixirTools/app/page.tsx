@@ -1,10 +1,19 @@
-import Image from "next/image";
+import { auth } from "@/auth"
+import Tabs from "./components/Tabs";
+import CompletedTasksList from "./projects/CompletedTasks";
+import Tasks from "./projects/TaskList";
+import Login from "@/app/components/Login";
 
+export default async function AdminPage() {
+  const session = await auth()
 
-export default function Home() {
+  if (!session) {
+    return <Login />
+  }
+
   return (
-    <main>
-      test
-    </main>
-  );
+    <div className="flex-center-center full-width basic-padding">
+      <Tasks tableTitle="All Tasks" />
+    </div>
+  )
 }

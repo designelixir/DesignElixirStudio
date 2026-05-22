@@ -1,11 +1,25 @@
 import NextAuth from "next-auth"
-import GitHub from "next-auth/providers/github"
+import Credentials from "next-auth/providers/credentials"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [GitHub],
-  callbacks: {
-    signIn({ profile }) {
-      return profile?.login === process.env.ALLOWED_GITHUB_USERNAME
-    }
-  }
+  providers: [
+    Credentials({
+      credentials: {
+        email: {},
+        password: {},
+      },
+      authorize(credentials) {
+        if (
+          credentials.email === process.env.ADMIN_EMAIL &&
+          credentials.password === process.env.ADMIN_PASSWORD
+        ) {
+          return { id: "1", email: credentials.email as string }
+        }
+        return null
+      },
+    }),
+  ],
+  pages: {
+    signIn: "/login",
+  },
 })

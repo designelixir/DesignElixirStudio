@@ -1,5 +1,5 @@
 import { createClient } from './supabase/client';
-import { Client, Project } from '../admin/types/globalTypes';
+import { Client, Project } from '../types/globalTypes';
 
 // Cache storage
 let clientsCache: Client[] | null = null;
