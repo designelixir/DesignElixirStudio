@@ -6,11 +6,11 @@ export default auth((req) => {
   const isAdminSubdomain = host.startsWith("admin.")
   const isAdminPath = req.nextUrl.pathname.startsWith("/admin")
 
-  const isLoginPath = req.nextUrl.pathname === "/login"
+  const isLoginPath = req.nextUrl.pathname === "/"
 
   // Protect /admin routes before any rewrite
   if ((isAdminSubdomain || isAdminPath) && !req.auth && !isLoginPath) {
-    return NextResponse.redirect(new URL("/login", req.url))
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
   // Rewrite admin subdomain to /admin path
