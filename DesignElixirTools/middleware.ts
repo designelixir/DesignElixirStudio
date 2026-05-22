@@ -6,16 +6,16 @@ export default auth((req) => {
   const isAdminSubdomain = host.startsWith("admin.")
   const isAdminPath = req.nextUrl.pathname.startsWith("/admin")
 
+  // Protect /admin routes before any rewrite
+  if ((isAdminSubdomain || isAdminPath) && !req.auth) {
+    return NextResponse.redirect(new URL("/api/auth/signin", req.url))
+  }
+
   // Rewrite admin subdomain to /admin path
   if (isAdminSubdomain && !isAdminPath) {
     const url = req.nextUrl.clone()
     url.pathname = `/admin${url.pathname}`
     return NextResponse.rewrite(url)
-  }
-
-  // Protect /admin routes
-  if ((isAdminSubdomain || isAdminPath) && !req.auth) {
-    return NextResponse.redirect(new URL("/api/auth/signin", req.url))
   }
 })
 
