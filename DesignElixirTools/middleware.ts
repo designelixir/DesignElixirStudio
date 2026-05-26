@@ -4,20 +4,11 @@ import { NextResponse } from "next/server"
 export default auth((req) => {
   const host = req.headers.get("host") ?? ""
   const isAdminSubdomain = host.startsWith("admin.")
-  const isAdminPath = req.nextUrl.pathname.startsWith("/admin")
-
   const isLoginPath = req.nextUrl.pathname === "/"
 
-  // Protect /admin routes before any rewrite
-  if ((isAdminSubdomain || isAdminPath) && !req.auth && !isLoginPath) {
+  // Protect all routes on the admin subdomain
+  if (isAdminSubdomain && !req.auth && !isLoginPath) {
     return NextResponse.redirect(new URL("/", req.url))
-  }
-
-  // Rewrite admin subdomain to /admin path
-  if (isAdminSubdomain && !isAdminPath) {
-    const url = req.nextUrl.clone()
-    url.pathname = `/admin${url.pathname}`
-    return NextResponse.rewrite(url)
   }
 })
 
