@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { TimeEntry } from '@/app/types/globalTypes';
+import { TimeEntry } from '@/types/globalTypes';
 import SearchAndSelectClient from '../components/SearchAndSelectClient';
 import SelectableCalendar from '../components/SelectableCalendar';
 import Image from 'next/image';

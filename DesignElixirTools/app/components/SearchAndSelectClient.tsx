@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react';
 import { fetchClients, fetchProjects } from '@/app/utils/clientUtils';
-import { Client, Project, SelectedClientData } from '../types/globalTypes';
+import { Client, Project, SelectedClientData } from '@/types/globalTypes';
 
 interface SearchAndSelectClientProps {
   selectedClient: SelectedClientData | null;

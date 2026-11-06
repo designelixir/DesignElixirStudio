@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
 import SearchAndSelectClient from '../components/SearchAndSelectClient';
-import { SelectedClientData, Checklist } from '@/app/types/globalTypes';
+import { SelectedClientData, Checklist } from '@/types/globalTypes';
 
 interface Project {
   id: string;

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Client } from '../types/globalTypes';
+import { Client } from '@/types/globalTypes';
 
 interface ActiveSession {
   originalStartTime: string;

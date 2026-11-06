@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { fetchClientWithProjects, clearSpecificCache } from '@/app/utils/clientUtils';
-import { Client, Project } from '@/app/types/globalTypes';
+import { Client, Project } from '@/types/globalTypes';
 import EditClient from '../EditClient';
 import TimeTrackedList from '@/app/time-tracking/TimeTrackedList';
 import Link from 'next/link';

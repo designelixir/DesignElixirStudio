@@ -6,7 +6,7 @@ import { useTracking } from '@/app/context/TrackingContext';
 import { useTimeTracker } from '@/app/context/TimeTrackerContext';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { SelectedClientData } from '../types/globalTypes';
+import { SelectedClientData } from '@/types/globalTypes';
 
 interface TimeTrackerBarProps {
   onEntrySaved?: () => void;

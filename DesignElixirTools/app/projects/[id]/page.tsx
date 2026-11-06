@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Project } from '@/app/types/globalTypes';
+import { Project } from '@/types/globalTypes';
 import Link from 'next/link';
 import EditProject from '../EditProject';
 import TimeTrackedList from '@/app/time-tracking/TimeTrackedList';

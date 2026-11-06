@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Client, Project } from '@/app/types/globalTypes';
+import { Client, Project } from '@/types/globalTypes';
 import ClientList from './ClientList';
 import CreateClient from './CreateClient';
 import { fetchProjects } from '@/app/utils/clientUtils';

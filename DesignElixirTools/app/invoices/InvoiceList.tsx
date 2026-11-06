@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { fetchInvoicesAction } from '@/app/actions/invoiceActions';
-import { Invoice } from '@/app/types/globalTypes';
+import { Invoice } from '@/types/globalTypes';
 import Link from 'next/link';
 
 interface InvoiceListProps {

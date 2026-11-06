@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/app/utils/supabase/server';
-import { InvoiceFields, PDFLineItem, SelectedClientData } from '../types/globalTypes';
+import { InvoiceFields, PDFLineItem, SelectedClientData } from '@/types/globalTypes';
 import { PaymentEntry } from './PaymentEntry';
 
 export async function saveInvoice(

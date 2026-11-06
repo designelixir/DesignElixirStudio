@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
 import SearchAndSelectClient from '../components/SearchAndSelectClient';
-import { SelectedClientData } from '@/app/types/globalTypes';
+import { SelectedClientData } from '@/types/globalTypes';
 
 export default function AddTimeCSV() {
   const [selectedClient, setSelectedClient] = useState<SelectedClientData | null>(null);

@@ -2,7 +2,7 @@
 
 import { auth } from '@/auth';
 import { createAdminClient } from '@/app/utils/supabase/server';
-import { Invoice } from '@/app/types/globalTypes';
+import { Invoice } from '@/types/globalTypes';
 
 async function requireAuth() {
   const session = await auth();
@@ -32,4 +32,32 @@ export async function fetchInvoicesAction(params: FetchInvoicesParams): Promise<
   const { data, error } = await query;
   if (error) throw error;
   return (data as Invoice[]) ?? [];
+}
+export interface IncomeSummary {
+  received: number; // payments received (before fees)
+  fees: number;     // processing fees on those payments
+  payments: number; // how many payments
+}
+
+// Invoice payments received in a year (by the date each payment was received),
+// across all invoices
+export async function fetchIncomeForYearAction(year: number): Promise<IncomeSummary> {
+  await requireAuth();
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.from('invoices').select('payments');
+  if (error) throw new Error(error.message);
+
+  let received = 0;
+  let fees = 0;
+  let payments = 0;
+  for (const invoice of data ?? []) {
+    for (const p of (invoice.payments ?? []) as { amount?: number; fees?: number; date_received?: string }[]) {
+      if (!p.date_received || !p.date_received.startsWith(`${year}-`)) continue;
+      received += Number(p.amount ?? 0);
+      fees += Number(p.fees ?? 0);
+      payments += 1;
+    }
+  }
+  const round = (n: number) => Math.round(n * 100) / 100;
+  return { received: round(received), fees: round(fees), payments };
 }

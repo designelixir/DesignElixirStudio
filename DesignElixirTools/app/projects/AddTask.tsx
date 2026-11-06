@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
 import SearchAndSelectClient from '../components/SearchAndSelectClient';
 import SelectableCalendar from '../components/SelectableCalendar';
-import { SelectedClientData } from '@/app/types/globalTypes';
+import { SelectedClientData } from '@/types/globalTypes';
 
 interface AddTaskProps {
   bucket: string;

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { InvoiceFields, PDFLineItem, SelectedClientData } from '../types/globalTypes';
+import { InvoiceFields, PDFLineItem, SelectedClientData } from '@/types/globalTypes';
 import { PaymentEntry } from './PDFToolbarPayments';
 import PDFToolbarDetails from './PDFToolbarDetails';
 import PDFToolbarTime from './PDFToolbarTime';

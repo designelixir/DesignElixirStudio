@@ -150,3 +150,267 @@ export interface MixpanelServiceAccount {
   service_account_username: string;
   service_account_secret: string;
 }
+
+export interface NavSubItem {
+  title: string;
+  href: string;
+}
+
+export interface NavItem {
+  title: string;
+  href: string;
+  icon: string;
+  section: string;
+  // Optional sub-links. The first click on the item opens them underneath;
+  // clicking it again (while open) goes to `href`.
+  children?: NavSubItem[];
+}
+
+export interface TrackingSession {
+  session_start: string;
+  session_end: string;
+  elapsed_time: number;
+}
+
+export interface TimeEntry {
+  id: string;
+  created_at: string;
+  start_time: string;
+  end_time: string | null;
+  time_lapsed: number | null;
+  client_id: string;
+  description: string;
+  tracking_finished: boolean;
+  invoice_id: string | null;
+  billable: boolean;
+  project: {
+    client_id: string;
+    client_first: string;
+    client_last: string;
+    project_id: string;
+    project_name: string;
+    project_color: string;
+    project_image?: string;
+    hourly_rate?: number;
+    deadline?: string;
+    active?: boolean;
+  };
+}
+
+export interface Checklist {
+  id: string;
+  created_at: string;
+  project_id: string;
+  task_description: string;
+  task_order: number;
+  task_deadline: string | null;
+  task_status: string;
+  task_completed: boolean;
+  task_bucket: string;
+}
+
+export interface Client {
+  id: string;
+  client_first: string;
+  client_last: string;
+  client_email: string;
+  client_phone?: string;
+  created_at: string;
+  
+  client_projects: { project_name: string; project_color: string, project_id: string }[];
+  client_notes?: string;
+  client_billable_rate?: number;
+  client_drive?: string;
+  client_github?: string;
+  last_active?: string;
+  active?: boolean;
+}
+
+export interface Project {
+  id: string;
+  created_at: string;
+  project_name: string;
+  client_id: string;
+  client_first: string;
+  client_last: string;
+  hourly_rate?: number;
+  color?: string;
+  active?: boolean;
+  deadline?: string;
+  last_active?: string;
+  client_image?: string; 
+}
+
+export interface SelectedClientData {
+  client_id: string;
+  client_name: string;
+  client_first: string;
+  client_last: string;
+  project_id: string;
+  project_name: string;
+  project_color: string;
+  project_hourly: number;
+}
+
+export interface ClientProject {
+  project_id: string;
+  project_name: string;
+  project_color: string;
+}
+
+export interface Task {
+  task_id: string;
+  task_name: string;
+  client_id?: string | null;
+  project_id?: string | null;
+  created_at: string;
+  task_notes?: string | null;
+  task_deadline?: string | null;
+  task_priority?: number | null;
+  task_bucket?: string | null;
+  task_status: string;
+  task_active: boolean;
+}
+
+export interface LineItem {
+  line_item_description: string;
+  hourly: boolean;
+  rate: number;
+  multiplier: number;
+  total: number;
+}
+
+export interface InvoicePayment {
+  id: string;
+  method: string;
+  amount: number;
+  date_received: string;
+  fees: number;
+}
+
+export interface Invoice {
+  id: string;
+  created_at: string;
+  start_date: string;
+  end_date: string;
+  invoice_date: string;
+  invoice_due: string;
+  client_id: number;
+  client_first: string;
+  client_last: string;
+  client_email: string;
+  client_phone?: string;
+  project_id?: number;
+  project_color?: string;
+  project_name?: string;
+  project_hourly?: number;
+  time_entries: number[];
+  time_entries_sum: number;
+  line_items: LineItem[];
+  line_items_total: number;
+  project_costs?: number;
+  adjustments?: number;
+  adjustments_descriptor?: string;
+  notes?: string;
+  private_notes?: string;
+  paid: boolean;
+  payments: InvoicePayment[];
+  draft: true;
+}
+
+export interface LineItem {
+  id: number;
+  desc: string;
+  qty: number;
+  rate: number;
+}
+
+export interface InvoiceFields {
+  fromName: string;
+  fromEmail: string;
+  fromPhone: string;
+  fromAddress: string;
+  toName: string;
+  toEmail: string;
+  toPhone: string;
+  toDetails: string;
+  invNumber: string;
+  invDate: string;
+  invDue: string;
+  invProject: string;
+  paid: boolean;
+  payments: InvoicePayment[];
+  notes: string;
+  terms: string;
+  footer: string;
+  adjustments: number;
+  adjustmentsDesc: string;
+}
+export interface PDFLineItem {
+  id: number;
+  desc: string;
+  qty: number;
+  qtyDisplay: string;
+  rate: number;
+  type: 'fixed' | 'hourly' | 'other';
+}
+
+
+export interface Account {
+  id: string;
+  created_at: string;
+  name: string;
+  brand: string | null;
+  checking_account: boolean;
+  credit_card: boolean;
+  loan: boolean;
+  interest_rate: number | null;
+  payment_day: number | null;
+  opening_balance: number | null;      // balance on opening_balance_date (owed, for cards)
+  opening_balance_date: string | null; // YYYY-MM-DD; transactions after this day are added on top
+  // Loans only
+  minimum_payment: number | null;
+  payment_frequency: 'monthly' | 'biweekly' | 'weekly' | null;
+  term_months: number | null;      // how long the loan runs
+  loan_start_date: string | null;  // YYYY-MM-DD; with term_months, gives the scheduled payoff date
+}
+
+export interface Transaction {
+  id: string;
+  created_at: string;
+  account_id: string;
+  statement_descriptor: string | null;
+  company: string | null;
+  purchase: boolean;
+  expense_category: string | null;    // the bank's category, e.g. "Restaurants"
+  expense_category_id: string | null; // your category (expense_categories.id)
+  cost: number;
+  date: string;
+  work_expense: boolean;
+  statement_id: string | null;
+  description: string | null;
+}
+
+export interface Statement {
+  id: string;
+  created_at: string;
+  name: string | null;
+  account_id: string;
+  file_path: string;
+  file_name: string;
+  file_type: string;
+  period_start: string | null; // YYYY-MM-DD
+  period_end: string | null;   // YYYY-MM-DD
+  status: string;
+  previous_balance: number | null; // as printed on the statement
+  new_balance: number | null;      // as printed on the statement
+}
+
+export interface ExpenseCategory {
+  id: string;
+  created_at: string;
+  title: string;
+  description: string | null;
+  percent_writeoff: number; // 0–100
+  color: string | null;     // hex, e.g. #FF6600
+}

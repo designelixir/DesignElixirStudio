@@ -2,9 +2,9 @@
 'use client';
 
 import { useState } from 'react';
-import { InvoiceFields } from '../types/globalTypes';
+import { InvoiceFields } from '@/types/globalTypes';
 import Image from 'next/image';
-import { InvoicePayment as PaymentEntry } from '../types/globalTypes';
+import { InvoicePayment as PaymentEntry } from '@/types/globalTypes';
 export type { PaymentEntry }
 
 const PAYMENT_METHODS = [

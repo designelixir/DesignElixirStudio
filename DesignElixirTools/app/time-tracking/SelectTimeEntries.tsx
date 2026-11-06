@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { fetchTimeEntriesAction } from '../actions/timeActions';
-import { TimeEntry } from '../types/globalTypes';
+import { TimeEntry } from '@/types/globalTypes';
 
 interface Props {
   selectedEntryIds: string[];

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Checklist } from '@/app/types/globalTypes';
+import { Checklist } from '@/types/globalTypes';
 import { createClient } from '@/app/utils/supabase/client';
 import SelectableCalendar from '../components/SelectableCalendar';
 

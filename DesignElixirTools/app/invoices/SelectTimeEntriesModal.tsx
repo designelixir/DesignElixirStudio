@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { SelectedClientData, TimeEntry, Project } from '../types/globalTypes';
+import { SelectedClientData, TimeEntry, Project } from '@/types/globalTypes';
 import { fetchTimeEntriesAction } from '../actions/timeActions';
 import { applyInvoiceToTimeEntries, removeTimeEntryFromInvoice, fetchTimeEntriesByIds } from './invoiceActions';
 

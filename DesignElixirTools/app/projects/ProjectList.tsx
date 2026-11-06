@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Project } from '@/app/types/globalTypes';
+import { Project } from '@/types/globalTypes';
 import Link from 'next/link';
 import SelectableCalendar from '../components/SelectableCalendar';
 import EditProject from './EditProject';

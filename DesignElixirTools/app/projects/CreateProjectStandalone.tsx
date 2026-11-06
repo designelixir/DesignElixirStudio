@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Client } from '@/app/types/globalTypes';
+import { Client } from '@/types/globalTypes';
 import ColorSelector from '../components/ColorSelector';
 import { getRandomColor } from '../components/ColorSelector';
 import { clearSpecificCache } from '@/app/utils/clientUtils';

@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import NextLink from 'next/link';
 import { useMemo } from 'react';
-import { InvoiceFields, PDFLineItem } from '../types/globalTypes';
+import { InvoiceFields, PDFLineItem } from '@/types/globalTypes';
 import InvoiceDocument from './InvoiceDocument';
 
 const PDFDownloadLink = dynamic(

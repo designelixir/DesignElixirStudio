@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Invoice } from '@/app/types/globalTypes';
+import { Invoice } from '@/types/globalTypes';
 import InvoiceList from './InvoiceList';
 import Link from 'next/link';
 

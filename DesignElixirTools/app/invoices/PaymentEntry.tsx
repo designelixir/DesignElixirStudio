@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Invoice } from '../types/globalTypes';
+import { Invoice } from '@/types/globalTypes';
 
 const PAYMENT_METHODS = [
   'Cash',

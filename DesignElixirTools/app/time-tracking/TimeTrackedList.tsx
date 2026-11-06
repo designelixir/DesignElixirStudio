@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { fetchProjectById } from '@/app/utils/clientUtils';
-import { TimeEntry, Project, SelectedClientData } from '@/app/types/globalTypes';
+import { TimeEntry, Project, SelectedClientData } from '@/types/globalTypes';
 import EditTimeEntry from './EditTimeEntry';
 import SearchAndSelectClient from '../components/SearchAndSelectClient';
 import { useTimeEntries } from '../context/TimeEntriesContext';

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useDebounce } from '@/app/hooks/useDebounce';
-import { InvoiceFields, PDFLineItem, SelectedClientData, Invoice } from '../types/globalTypes';
+import { InvoiceFields, PDFLineItem, SelectedClientData, Invoice } from '@/types/globalTypes';
 import InvoiceHeader from './InvoiceHeader';
 import PDFPreview from './PDFPreview';
 import PDFToolbar from './PDFToolBar';

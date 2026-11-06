@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Checklist } from '@/app/types/globalTypes';
+import { Checklist } from '@/types/globalTypes';
 import TaskCard from './TaskCard';
 import AddTask from './AddTask';
 

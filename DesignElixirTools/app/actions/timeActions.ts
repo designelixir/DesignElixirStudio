@@ -2,7 +2,7 @@
 
 import { auth } from '@/auth';
 import { createAdminClient } from '@/app/utils/supabase/server';
-import { TimeEntry } from '@/app/types/globalTypes';
+import { TimeEntry } from '@/types/globalTypes';
 
 async function requireAuth() {
   const session = await auth();

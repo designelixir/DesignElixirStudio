@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { InvoiceFields, SelectedClientData } from '../types/globalTypes';
+import { InvoiceFields, SelectedClientData } from '@/types/globalTypes';
 import SearchAndSelectClient from '../components/SearchAndSelectClient';
 import SelectableCalendar from '../components/SelectableCalendar';
 

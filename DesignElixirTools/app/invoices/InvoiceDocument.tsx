@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic';
 import { Document, Page, Text, View, Image as PDFImage, Link } from '@react-pdf/renderer';
 import { pdfStyles as s } from '@/app/lib/pdfStyles';
-import { InvoiceFields, PDFLineItem } from '../types/globalTypes';
+import { InvoiceFields, PDFLineItem } from '@/types/globalTypes';
 import NextLink from 'next/link';
 
 function fmtDate(str: string) {

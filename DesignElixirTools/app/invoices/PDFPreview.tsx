@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { memo } from 'react';
-import { InvoiceFields, PDFLineItem } from '../types/globalTypes';
+import { InvoiceFields, PDFLineItem } from '@/types/globalTypes';
 import InvoiceDocument from './InvoiceDocument';
 
 const PDFViewer = dynamic(

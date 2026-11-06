@@ -1,7 +1,7 @@
 // components/invoice/PDFToolbarLineItems.tsx
 'use client';
 
-import { InvoiceFields, PDFLineItem } from '../types/globalTypes';
+import { InvoiceFields, PDFLineItem } from '@/types/globalTypes';
 import Image from 'next/image';
 
 interface PDFToolbarLineItemsProps {

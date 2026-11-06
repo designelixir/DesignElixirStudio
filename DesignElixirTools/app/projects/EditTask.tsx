@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Task } from '@/app/types/globalTypes';
+import { Task } from '@/types/globalTypes';
 import Image from 'next/image';
 
 interface EditTaskProps {

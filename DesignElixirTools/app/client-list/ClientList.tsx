@@ -1,6 +1,6 @@
 'use client';
 
-import { Client, Project } from "@/app/types/globalTypes";
+import { Client, Project } from "@/types/globalTypes";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { fetchClientTimesAction } from "../actions/clientActions";

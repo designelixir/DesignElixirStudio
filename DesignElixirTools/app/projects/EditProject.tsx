@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Project } from '@/app/types/globalTypes';
+import { Project } from '@/types/globalTypes';
 import ColorSelector from '../components/ColorSelector';
 import Image from 'next/image';
 

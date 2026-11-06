@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { createClient as createSupabaseClient } from '@/app/utils/supabase/client';
 import { fetchClientWithProjects, clearSpecificCache } from '@/app/utils/clientUtils';
-import { Client, Project } from '@/app/types/globalTypes';
+import { Client, Project } from '@/types/globalTypes';
 import CreateProject from '../projects/CreateProject';
 import Image from 'next/image';
 
