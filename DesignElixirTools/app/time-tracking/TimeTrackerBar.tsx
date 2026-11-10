@@ -371,7 +371,7 @@ export default function TimeTrackerBar({ onEntrySaved }: TimeTrackerBarProps) {
       <div className="time-tracker-wrapper flex-center-spacebetween" style={{border: error ? '2px solid red' : '2px solid #E7E8E8'}}>
         <div className="time-bar-input-wrapper flex-center-start full-width">
           <input className='time-bar-input' value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What are you working on?" style={{width: '40%'}}/>
-          <div className='select-client-wrapper'>
+          <div className='select-client-wrapper' >
             <SearchAndSelectClient selectedClient={selectedClient} onClientSelect={setSelectedClient} />
           </div>
           

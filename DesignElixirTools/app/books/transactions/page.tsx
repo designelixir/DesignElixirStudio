@@ -6,7 +6,7 @@ import { fetchTransactionsAction } from '@/app/actions/transactionActions';
 import { fetchAccountsAction } from '@/app/actions/accountActions';
 import { fetchStatementsAction } from '@/app/actions/statementActions';
 import { fetchExpenseCategoriesAction } from '@/app/actions/expenseCategoryActions';
-import TransactionsTable from '../TransactionsTable';
+import TransactionsBrowser from '../TransactionsBrowser';
 import UploadStatement from '../statements/UploadStatement';
 import BooksHeader from '../BooksHeader';
 
@@ -17,6 +17,7 @@ export default function Transactions(){
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [adding, setAdding] = useState(false);
 
   const loadData = async () => {
     try {
@@ -43,35 +44,27 @@ export default function Transactions(){
     loadData();
   }, []);
 
-  const handleTransactionCreated = () => {
-    loadData();
-  };
-
-
   return (
-
     <div className='full-width basic-padding'>
-        <BooksHeader
-            title='Transactions'
-            actions={<UploadStatement accounts={accounts} onUploaded={loadData} />}
-        />
+        <BooksHeader title='Transactions' actions={<UploadStatement accounts={accounts} onUploaded={loadData} />} />
         {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
-        <div>
         {!error && (
-            <TransactionsTable
+            <TransactionsBrowser
                 transactions={transactions}
                 accounts={accounts}
                 statements={statements}
                 categories={categories}
-                onTransactionUpdated={loadData}
                 loading={loading}
-                emptyMessage='No transactions yet. Fill in the row above and click + to add one.'
-                onTransactionCreated={handleTransactionCreated}
+                emptyMessage='No transactions yet. Click "+ Add transaction" to add one.'
+                onTransactionUpdated={loadData}
+                onTransactionCreated={adding ? loadData : undefined}
+                toolbar={
+                    <button type='button' onClick={() => setAdding((a) => !a)}>
+                        {adding ? 'Done adding' : '+ Add transaction'}
+                    </button>
+                }
             />
         )}
-        </div>
     </div>
-
-
   );
 }

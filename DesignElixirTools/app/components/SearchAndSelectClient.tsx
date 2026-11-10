@@ -228,13 +228,13 @@ export default function SearchAndSelectClient({ selectedClient, onClientSelect }
       )}
 
       {showProjectPicker && selectedClientForProjects && (
-        <div className="search-select-client-box">
+        <div className="search-select-client-box" >
           <p className='no-text-spacing'><strong> Select a project for {selectedClientForProjects.client_first} {selectedClientForProjects.client_last}: </strong> </p>
           {(selectedClientForProjects.projects || []).map(project => (
             <div
               key={project.id}
               onClick={() => handleProjectSelect(project)}
-              className="search-select-client-entry"
+              className="search-select-client-entry" 
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
             >

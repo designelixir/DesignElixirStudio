@@ -73,7 +73,7 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className='flex-start-start flex-column basic-padding'>
+    <div className='flex-start-start flex-column basic-padding full-width'>
       <div className='flex-center-spacebetween full-width'>
         <div>
           <h1>Clients</h1>

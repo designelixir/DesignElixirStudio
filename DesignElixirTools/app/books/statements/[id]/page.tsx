@@ -8,7 +8,7 @@ import { fetchStatementAction, getStatementFileUrlAction } from '@/app/actions/s
 import { fetchTransactionsForStatementAction } from '@/app/actions/transactionActions';
 import { fetchExpenseCategoriesAction } from '@/app/actions/expenseCategoryActions';
 import { formatDay } from '../formatDay';
-import TransactionsTable from '../../TransactionsTable';
+import TransactionsBrowser from '../../TransactionsBrowser';
 import ParseDiscover from './ParseDiscover';
 import EditStatement from './EditStatement';
 import ParseChase from './ParseChase';
@@ -146,7 +146,12 @@ export default function StatementSinglePage() {
                 {transactions.length} transaction{transactions.length === 1 ? '' : 's'} ·
                 purchases {currency.format(purchasesTotal)} · payments/credits {currency.format(creditsTotal)}
             </h6>
-            <TransactionsTable transactions={transactions} categories={categories} onTransactionUpdated={reloadTransactions} />
+            <TransactionsBrowser
+              transactions={transactions}
+              categories={categories}
+              onTransactionUpdated={reloadTransactions}
+              exportContext={{ accounts, statements: statement ? [statement] : [] }}
+            />
         </div>
     )}
 

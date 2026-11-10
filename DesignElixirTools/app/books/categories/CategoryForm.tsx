@@ -1,28 +1,31 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { ExpenseCategory } from '@/types/globalTypes';
+import { ExpenseCategory, ParentCategory } from '@/types/globalTypes';
 import {
   createExpenseCategoryAction,
   updateExpenseCategoryAction,
 } from '@/app/actions/expenseCategoryActions';
 import ColorSelector, { getRandomColor } from '@/app/components/ColorSelector';
+import { PARENT_CATEGORIES } from './parentCategories';
 
 interface CategoryFormProps {
   category?: ExpenseCategory; // pass to edit; leave out to add a new one
   initialTitle?: string;      // pre-fills the title when adding
+  initialParent?: ParentCategory | null; // pre-picks the parent when adding
   onSaved: (category: ExpenseCategory) => void;
   onClose: () => void;
 }
 
 // Popup for adding or editing an expense category
-export default function CategoryForm({ category, initialTitle, onSaved, onClose }: CategoryFormProps) {
+export default function CategoryForm({ category, initialTitle, initialParent, onSaved, onClose }: CategoryFormProps) {
   const isEditing = !!category;
   const [formData, setFormData] = useState(() => ({
     title: category?.title ?? initialTitle ?? '',
     description: category?.description ?? '',
     percent_writeoff: category ? String(category.percent_writeoff) : '100',
     color: category?.color ?? getRandomColor(),
+    parent_category: (category ? category.parent_category ?? '' : initialParent ?? '') as ParentCategory | '',
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -37,6 +40,7 @@ export default function CategoryForm({ category, initialTitle, onSaved, onClose 
       description: formData.description.trim() || null,
       percent_writeoff: Number(formData.percent_writeoff),
       color: formData.color,
+      parent_category: formData.parent_category || null,
     };
 
     try {
@@ -92,6 +96,19 @@ export default function CategoryForm({ category, initialTitle, onSaved, onClose 
                 onChange={(e) => setFormData({ ...formData, percent_writeoff: e.target.value })}
               />
             </div>
+          </div>
+
+          <div className='flex-start-start flex-column form-input-wrapper' style={{ maxWidth: '260px' }}>
+            <label>Parent category</label>
+            <select
+              value={formData.parent_category}
+              onChange={(e) => setFormData({ ...formData, parent_category: e.target.value as ParentCategory | '' })}
+            >
+              <option value=''>None</option>
+              {PARENT_CATEGORIES.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
           </div>
 
           <div className='flex-start-start flex-column form-input-wrapper'>

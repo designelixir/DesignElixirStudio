@@ -389,6 +389,10 @@ export interface Transaction {
   work_expense: boolean;
   statement_id: string | null;
   description: string | null;
+  tags: string[];                     // free-form tag names, e.g. ["client-acme"]
+  receipt_path: string | null;        // file in the `receipts` storage bucket
+  receipt_file_name: string | null;   // original name of that file
+  reconciled: number | null;          // amount paid back; spending counts cost − this
 }
 
 export interface Statement {
@@ -413,4 +417,16 @@ export interface ExpenseCategory {
   description: string | null;
   percent_writeoff: number; // 0–100
   color: string | null;     // hex, e.g. #FF6600
+  parent_category: ParentCategory | null; // the group this category sits under
 }
+
+export type ParentCategory =
+  | 'automotive'
+  | 'home_improvement'
+  | 'medical'
+  | 'stuff'
+  | 'food'
+  | 'services'
+  | 'entertainment'
+  | 'payments'
+  | 'misc';

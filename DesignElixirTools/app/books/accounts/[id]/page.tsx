@@ -16,7 +16,7 @@ import { extractPdfRows } from '@/app/books/statements/[id]/pdfText';
 import { formatForBrand } from '@/app/books/statements/[id]/statementFormats';
 import { formatDay } from '@/app/books/statements/formatDay';
 import MiniCreditCard from '../../MiniCreditCard';
-import TransactionsTable from '../../TransactionsTable';
+import TransactionsBrowser from '../../TransactionsBrowser';
 import AddAccount from '../AddAccount';
 import LoanSummary from './LoanSummary';
 import { totalsFor } from '../AccountsSummary';
@@ -265,12 +265,13 @@ export default function AccountPage() {
 
       {/* Transactions */}
       <h2>Transactions</h2>
-      <TransactionsTable
+      <TransactionsBrowser
         transactions={transactions}
         statements={statements}
         categories={categories}
         emptyMessage='No transactions for this account yet.'
         onTransactionUpdated={load}
+        exportContext={{ accounts: account ? [account] : [] }}
       />
 
       {editing && (

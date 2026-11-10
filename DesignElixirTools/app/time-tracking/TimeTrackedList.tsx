@@ -445,6 +445,18 @@ export default function TimeTrackedList({
               </div>
             )}
 
+            {isDateRangeActive && (
+            <div className='flex-end-end flex-column'>
+              <p className='no-text-spacing' style={{ fontSize: '12px', opacity: 0.6 }}>
+                {dateRange.start!.toLocaleDateString()} – {dateRange.end!.toLocaleDateString()}
+              </p>
+              <h3 className='time-tracker-time no-text-spacing'>{formatTime(dateRangeTotals.totalSeconds)}</h3>
+              {billableRate && dateRangeTotals.totalAmount && (
+                <h3 className='no-text-spacing' style={{ color: 'green' }}>${dateRangeTotals.totalAmount}</h3>
+              )}
+            </div>
+          )}
+
             <div ref={datePickerRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowDatePicker(p => !p)}
@@ -476,17 +488,7 @@ export default function TimeTrackedList({
             </div>
           </div>
 
-          {isDateRangeActive && (
-            <div className='flex-end-end flex-column'>
-              <p className='no-text-spacing' style={{ fontSize: '12px', opacity: 0.6 }}>
-                {dateRange.start!.toLocaleDateString()} – {dateRange.end!.toLocaleDateString()}
-              </p>
-              <h3 className='time-tracker-time no-text-spacing'>{formatTime(dateRangeTotals.totalSeconds)}</h3>
-              {billableRate && dateRangeTotals.totalAmount && (
-                <h3 className='no-text-spacing' style={{ color: 'green' }}>${dateRangeTotals.totalAmount}</h3>
-              )}
-            </div>
-          )}
+          
         </div>
       )}
 

@@ -15,7 +15,7 @@ import CategoryFilters, {
   toTransactionFilters,
 } from '../categories/CategoryFilters';
 import { computeCategoryTotals, UNCATEGORIZED_KEY } from '../categories/categoryTotals';
-import TransactionsTable from '../TransactionsTable';
+import TransactionsBrowser from '../TransactionsBrowser';
 import BooksHeader from '../BooksHeader';
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -258,7 +258,7 @@ export default function Expenses() {
                       {open && (
                         <tr>
                           <td colSpan={columns} style={{ background: '#fafafa', padding: '10px 10px 20px 30px' }}>
-                            <TransactionsTable
+                            <TransactionsBrowser
                               transactions={g.transactions}
                               accounts={accounts}
                               statements={statements}

@@ -4,10 +4,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Account, ExpenseCategory, Statement, Transaction } from '@/types/globalTypes';
-import { fetchCompaniesAction } from '@/app/actions/transactionActions';
+import { fetchCompaniesAction, fetchTagsAction } from '@/app/actions/transactionActions';
 import TransactionFormRow from './TransactionFormRow';
 import CategoryForm from './categories/CategoryForm';
 import MiniCreditCard from './MiniCreditCard';
+import ReceiptButton from './ReceiptButton';
+import { hasReconciled, netCost } from './transactionAmounts';
 
 interface TransactionsTableProps {
   transactions: Transaction[];
@@ -22,10 +24,14 @@ interface TransactionsTableProps {
   // Pass to show a row for adding a transaction at the top (needs `accounts`;
   // `statements` fill its Statement dropdown). Called after one is added.
   onTransactionCreated?: () => void;
+  // Pass both to show a checkbox on each row (and select-all in the header)
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
 }
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const COMPANIES_LIST_ID = 'transaction-companies';
+const TAGS_LIST_ID = 'transaction-tags';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -41,14 +47,17 @@ export default function TransactionsTable({
   topRow,
   onTransactionUpdated,
   onTransactionCreated,
+  selectedIds,
+  onSelectionChange,
 }: TransactionsTableProps) {
+  const selectable = !!selectedIds && !!onSelectionChange;
   const editable = !!onTransactionUpdated;
   const canAdd = !!onTransactionCreated && !!accounts;
   const showAccount = !!accounts;
   const showStatement = !!statements;
   const hasButtonColumn = !!topRow || editable || canAdd;
   const showAccountColumn = showAccount || showStatement;
-  const columnCount = 5 + (showAccountColumn ? 1 : 0) + (hasButtonColumn ? 1 : 0);
+  const columnCount = 5 + (selectable ? 1 : 0) + (showAccountColumn ? 1 : 0) + (hasButtonColumn ? 1 : 0);
 
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -67,12 +76,16 @@ export default function TransactionsTable({
 
   // Company suggestions for the add / edit rows (reloaded after a save, to pick up new names)
   const [companies, setCompanies] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [companiesVersion, setCompaniesVersion] = useState(0);
   useEffect(() => {
     if (!editable && !canAdd) return;
     fetchCompaniesAction()
       .then(setCompanies)
       .catch((err) => console.error('Error loading companies:', err));
+    fetchTagsAction()
+      .then(setTags)
+      .catch((err) => console.error('Error loading tags:', err));
   }, [editable, canAdd, companiesVersion]);
 
   const accountById = (id: string) => accounts?.find((a) => a.id === id) ?? null;
@@ -105,6 +118,35 @@ export default function TransactionsTable({
     );
   };
 
+  const allSelected = selectable && transactions.length > 0 && transactions.every((t) => selectedIds!.has(t.id));
+  const someSelected = selectable && transactions.some((t) => selectedIds!.has(t.id));
+  const toggleAll = () => {
+    const next = new Set(selectedIds);
+    for (const t of transactions) {
+      if (allSelected) next.delete(t.id);
+      else next.add(t.id);
+    }
+    onSelectionChange!(next);
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onSelectionChange!(next);
+  };
+  const checkboxCell = (t: Transaction) =>
+    selectable && (
+      <td style={{ width: '1%' }}>
+        <input
+          type='checkbox'
+          checked={selectedIds!.has(t.id)}
+          onChange={() => toggleOne(t.id)}
+          aria-label={`Select ${t.company || t.statement_descriptor || 'transaction'}`}
+        />
+      </td>
+    );
+  const blankCheckboxCell = selectable ? <td></td> : undefined;
+
   const categoryCell = (t: Transaction) => {
     const c = t.expense_category_id ? allCategories.find((x) => x.id === t.expense_category_id) : undefined;
     if (c) {
@@ -124,6 +166,18 @@ export default function TransactionsTable({
       <table>
         <thead>
           <tr>
+            {selectable && (
+              <th style={{ width: '1%' }}>
+                <input
+                  type='checkbox'
+                  checked={allSelected}
+                  ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
+                  onChange={toggleAll}
+                  disabled={transactions.length === 0}
+                  aria-label='Select all shown transactions'
+                />
+              </th>
+            )}
             <th>Date</th>
             {showAccountColumn && <th>Account</th>}
             <th>Transaction</th>
@@ -138,11 +192,13 @@ export default function TransactionsTable({
           {canAdd && (
             <TransactionFormRow
               mode='add'
+              leadingCell={blankCheckboxCell}
               accounts={accounts!}
               statements={statements ?? []}
               columnCount={columnCount}
               categories={allCategories}
               companiesListId={COMPANIES_LIST_ID}
+              tagsListId={TAGS_LIST_ID}
               onAddCategory={(title, select) => setNewCategory({ title, select })}
               onSaved={() => {
                 setCompaniesVersion((v) => v + 1);
@@ -161,11 +217,13 @@ export default function TransactionsTable({
               <TransactionFormRow
                 key={t.id}
                 mode='edit'
+                leadingCell={checkboxCell(t)}
                 transaction={t}
                 readOnlyCells={accountAndStatementCells(t)}
                 columnCount={columnCount}
                 categories={allCategories}
                 companiesListId={COMPANIES_LIST_ID}
+                tagsListId={TAGS_LIST_ID}
                 onAddCategory={(title, select) => setNewCategory({ title, select })}
                 onSaved={() => {
                   setEditingId(null);
@@ -176,11 +234,18 @@ export default function TransactionsTable({
               />
             ) : (
               <tr key={t.id} className={t.purchase ? 'purchase' : 'payment'}>
+                {checkboxCell(t)}
                 <td style={{ whiteSpace: 'nowrap' }}>{formatDate(t.date)}</td>
                 {accountAndStatementCells(t)}
                 <td>
                   {/* Company, then your description, then the bank's descriptor */}
                   <strong>{t.company || '—'}</strong>
+                  {t.receipt_path && (
+                    <>
+                      {' '}
+                      <ReceiptButton path={t.receipt_path} fileName={t.receipt_file_name} />
+                    </>
+                  )}
                   {t.description && (
                     <>
                       <br />
@@ -194,9 +259,25 @@ export default function TransactionsTable({
                     </>
                   )}
                 </td>
-                <td className='flex-center-start no-flex-grow'>{categoryCell(t)}</td>
+                <td>
+                  {/* Category, with the transaction's tags underneath */}
+                  <div className='flex-center-start no-flex-grow'>{categoryCell(t)}</div>
+                  {t.tags?.length > 0 && (
+                    <div className='flex-center-start flex-wrap' style={{ gap: '4px', marginTop: '4px', maxWidth: '200px' }}>
+                      {t.tags.map((tag) => <span key={tag} className='transaction-tag'>{tag}</span>)}
+                    </div>
+                  )}
+                </td>
                 <td>{t.work_expense ? '✓' : ''}</td>
-                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{t.purchase ? "-" : "+"}{currency.format(Number(t.cost))}</td>
+                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  {t.purchase ? "-" : "+"}{currency.format(Number(t.cost))}
+                  {hasReconciled(t) && (
+                    // Paid back in part: spending counts what's left
+                    <div style={{ color: '#888', fontSize: '11px' }} title='Counted toward spending'>
+                      {currency.format(Number(t.reconciled))} reconciled · <strong>{currency.format(netCost(t))}</strong>
+                    </div>
+                  )}
+                </td>
                 {hasButtonColumn && (
                   <td>
                     {editable && (
@@ -221,6 +302,11 @@ export default function TransactionsTable({
       {(editable || canAdd) && (
         <datalist id={COMPANIES_LIST_ID}>
           {companies.map((name) => <option key={name} value={name} />)}
+        </datalist>
+      )}
+      {(editable || canAdd) && (
+        <datalist id={TAGS_LIST_ID}>
+          {tags.map((name) => <option key={name} value={name} />)}
         </datalist>
       )}
 

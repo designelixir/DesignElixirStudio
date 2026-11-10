@@ -51,9 +51,7 @@ export default function Books(){
   return (
 
     <div className='full-width basic-padding'>
-        <BooksHeader crumbs={[]} title='Book Keeping' subtitle={
-  <p>Ask yourself, do you really fucking need that??? The only way out of this is to STOP SPENDING MONEY BITCH</p>
-        } />
+        <BooksHeader crumbs={[]} title='Books' subtitle={ <p>Ask yourself, do you really fucking need that??? The only way out of this is to STOP SPENDING MONEY BITCH</p> } />
         {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
         <div className='flex-start-start flex-wrap'>
             <div className="books-section basic-padding br">

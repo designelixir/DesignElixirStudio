@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, FormEvent } from 'react';
+import React, { useState, useRef, FormEvent, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { Account, ExpenseCategory, Statement, Transaction } from '@/types/globalTypes';
 import {
@@ -10,11 +10,17 @@ import {
 } from '@/app/actions/transactionActions';
 import Toggle from '@/app/components/Toggle';
 import CategorySelect from './categories/CategorySelect';
+import TagInput from './TagInput';
+import ReceiptButton from './ReceiptButton';
+import { RECEIPT_ACCEPT, receiptFileProblem, uploadReceipt } from './receipts';
+import { removeReceiptAction } from '@/app/actions/receiptActions';
 
 type TransactionFormRowProps = {
   columnCount: number;
+  leadingCell?: React.ReactNode; // e.g. an empty cell under the table's checkbox column
   categories: ExpenseCategory[];
   companiesListId: string; // <datalist> of company names to search
+  tagsListId: string;      // <datalist> of tags already used
   // Opens the add-category popup; `select` picks the new category in this row
   onAddCategory: (typedTitle: string, select: (categoryId: string) => void) => void;
   onSaved: () => void; // after adding, saving or deleting
@@ -54,12 +60,14 @@ const emptyForm = () => ({
   purchase: true,
   work_expense: false,
   cost: '',
+  reconciled: '', // '' = nothing reconciled
+  tags: [] as string[],
 });
 
 // One editable transaction row, used both to add a new transaction and to
 // edit a saved one.
 export default function TransactionFormRow(props: TransactionFormRowProps) {
-  const { columnCount, categories, companiesListId, onAddCategory, onSaved } = props;
+  const { columnCount, categories, companiesListId, tagsListId, onAddCategory, onSaved } = props;
   const t = props.mode === 'edit' ? props.transaction : null;
 
   const [formData, setFormData] = useState(() =>
@@ -76,13 +84,48 @@ export default function TransactionFormRow(props: TransactionFormRowProps) {
           purchase: t.purchase,
           work_expense: t.work_expense,
           cost: Number(t.cost).toFixed(2),
+          reconciled: Number(t.reconciled ?? 0) > 0 ? Number(t.reconciled).toFixed(2) : '',
+          tags: t.tags ?? [],
         }
       : emptyForm()
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const set = (field: keyof ReturnType<typeof emptyForm>, value: string | boolean) =>
+  // Receipt: a new file to upload on save, or a request to remove the saved one
+  const receiptInputRef = useRef<HTMLInputElement>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [removeReceipt, setRemoveReceipt] = useState(false);
+  const hasSavedReceipt = !!t?.receipt_path && !removeReceipt;
+
+  const handleReceiptChosen = (e: ChangeEvent<HTMLInputElement>) => {
+    const chosen = e.target.files?.[0];
+    e.target.value = ''; // let the same file be picked again
+    if (!chosen) return;
+    const problem = receiptFileProblem(chosen);
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    setError('');
+    setReceiptFile(chosen);
+    setRemoveReceipt(false);
+  };
+
+  // After the transaction itself is saved: upload / remove its receipt.
+  // Returns an error message rather than throwing, since the transaction did save.
+  const saveReceipt = async (transactionId: string) => {
+    try {
+      if (receiptFile) await uploadReceipt(transactionId, receiptFile);
+      else if (removeReceipt && t?.receipt_path) await removeReceiptAction(transactionId);
+      return '';
+    } catch (err) {
+      console.error('Error saving receipt:', err);
+      return `Transaction saved, but the receipt didn't: ${err instanceof Error ? err.message : 'upload failed'}`;
+    }
+  };
+
+  const set = (field: keyof ReturnType<typeof emptyForm>, value: string | boolean | string[]) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
   // Fields both modes save
@@ -96,22 +139,32 @@ export default function TransactionFormRow(props: TransactionFormRowProps) {
     purchase: formData.purchase,
     work_expense: formData.work_expense,
     cost: Number(formData.cost),
+    reconciled: formData.reconciled === '' || Number(formData.reconciled) === 0 ? null : Number(formData.reconciled),
+    tags: formData.tags,
   });
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (formData.reconciled !== '' && Number(formData.reconciled) > Number(formData.cost)) {
+      setError('Reconciled can’t be more than the cost.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
+      let receiptError = '';
       if (t) {
         await updateTransactionAction(t.id, fields());
+        receiptError = await saveReceipt(t.id);
       } else {
-        await createTransactionAction({
+        const created = await createTransactionAction({
           ...fields(),
           account_id: formData.account_id,
           statement_id: formData.statement_id || null,
           expense_category: null,
         });
+        receiptError = await saveReceipt(created.id);
+        setReceiptFile(null);
         // Keep account, statement and date so several lines from one statement
         // can be entered in a row; clear the rest
         setFormData((prev) => ({
@@ -120,6 +173,12 @@ export default function TransactionFormRow(props: TransactionFormRowProps) {
           statement_id: prev.statement_id,
           date: prev.date,
         }));
+      }
+      if (receiptError) {
+        // Stay open (edit mode) so the message can be read; the row still reloads
+        setError(receiptError);
+        if (!t) onSaved();
+        return;
       }
       onSaved();
     } catch (err) {
@@ -154,6 +213,7 @@ export default function TransactionFormRow(props: TransactionFormRowProps) {
   return (
     <>
       <tr className={formData.purchase ? 'purchase' : 'payment'}>
+        {props.leadingCell}
         <td>
           <form id={f} onSubmit={handleSubmit} />
           <input form={f} type='date' required style={inputStyle}
@@ -186,7 +246,6 @@ export default function TransactionFormRow(props: TransactionFormRowProps) {
         )}
 
         <td>
-          {/* Company, then your description, then the bank's descriptor */}
           <input form={f} type='text' placeholder='Company' style={{ ...inputStyle, minWidth: '200px' }}
             list={companiesListId} autoComplete='off'
             value={formData.company} onChange={(e) => set('company', e.target.value)} />
@@ -194,6 +253,42 @@ export default function TransactionFormRow(props: TransactionFormRowProps) {
             value={formData.description} onChange={(e) => set('description', e.target.value)} />
           <input form={f} type='text' placeholder='Descriptor' style={{ ...inputStyle, marginTop: '5px' }}
             value={formData.statement_descriptor} onChange={(e) => set('statement_descriptor', e.target.value)} />
+          
+          <input ref={receiptInputRef} type='file' accept={RECEIPT_ACCEPT} style={{ display: 'none' }}
+            onChange={handleReceiptChosen} />
+          <div className='flex-center-start flex-wrap' style={{ gap: '6px', marginTop: '5px', fontSize: '11px' }}>
+            {receiptFile ? (
+              <span className='transaction-tag' title='Uploads when you save'>
+                📎 {receiptFile.name}
+                <button type='button' onClick={() => setReceiptFile(null)} aria-label='Remove chosen receipt'>×</button>
+              </span>
+            ) : hasSavedReceipt ? (
+              <>
+                <ReceiptButton path={t!.receipt_path!} fileName={t!.receipt_file_name} />
+                <span style={{ color: '#666' }}>{t!.receipt_file_name ?? 'Receipt'}</span>
+                <button type='button' className='system-button tiny-button' onClick={() => receiptInputRef.current?.click()}>
+                  Replace
+                </button>
+                <button type='button' className='system-button tiny-button' onClick={() => setRemoveReceipt(true)}>
+                  Remove
+                </button>
+              </>
+            ) : (
+              <>
+                <button type='button' className='system-button tiny-button' onClick={() => receiptInputRef.current?.click()}>
+                  + Receipt
+                </button>
+                {removeReceipt && (
+                  <span style={{ color: '#999' }}>
+                    Receipt removed on save ·{' '}
+                    <button type='button' className='system-button tiny-button' onClick={() => setRemoveReceipt(false)}>
+                      Undo
+                    </button>
+                  </span>
+                )}
+              </>
+            )}
+          </div>
         </td>
         <td>
           <div style={{ maxWidth: '160px' }}>
@@ -204,6 +299,8 @@ export default function TransactionFormRow(props: TransactionFormRowProps) {
               onAddCategory={(title) => onAddCategory(title, (id) => set('expense_category_id', id))}
               placeholder={t?.expense_category ? `Bank: ${t.expense_category}` : 'Search categories'}
             />
+            <TagInput form={f} suggestionsListId={tagsListId} style={{ marginTop: '5px' }}
+            value={formData.tags} onChange={(tags) => set('tags', tags)} />
           </div>
         </td>
         <td>
@@ -218,6 +315,11 @@ export default function TransactionFormRow(props: TransactionFormRowProps) {
           <input form={f} type='number' step='0.01' min='0' required placeholder='0.00'
             style={{ ...inputStyle, maxWidth: '50px', textAlign: 'right' }}
             value={formData.cost} onChange={(e) => set('cost', e.target.value)} />
+          <input form={f} type='number' step='0.01' min='0' placeholder='Reconciled'
+            title='Amount paid back — spending counts the cost minus this'
+            aria-label='Reconciled amount'
+            style={{ ...inputStyle, maxWidth: '50px', textAlign: 'right', marginTop: '5px' }}
+            value={formData.reconciled} onChange={(e) => set('reconciled', e.target.value)} />
         </td>
         <td className='flex-center-center'>
           {props.mode === 'edit' ? (
