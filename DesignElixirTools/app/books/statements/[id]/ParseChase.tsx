@@ -6,5 +6,5 @@ import StatementPdfParser from './StatementPdfParser';
 
 // Chase credit card monthly statements
 export default function ParseChase(props: StatementParserProps) {
-  return <StatementPdfParser {...props} title='Chase Parser' parse={STATEMENT_FORMATS.chase.parse} summarize={STATEMENT_FORMATS.chase.summarize} />;
+  return <StatementPdfParser {...props} title='Chase Parser' parse={STATEMENT_FORMATS.chase.parse} />;
 }

@@ -299,9 +299,11 @@ export default function TransactionFormRow(props: TransactionFormRowProps) {
               onAddCategory={(title) => onAddCategory(title, (id) => set('expense_category_id', id))}
               placeholder={t?.expense_category ? `Bank: ${t.expense_category}` : 'Search categories'}
             />
-            <TagInput form={f} suggestionsListId={tagsListId} style={{ marginTop: '5px' }}
-            value={formData.tags} onChange={(tags) => set('tags', tags)} />
           </div>
+        </td>
+        <td>
+          <TagInput form={f} suggestionsListId={tagsListId} style={{ minWidth: '120px', maxWidth: '200px' }}
+            value={formData.tags} onChange={(tags) => set('tags', tags)} />
         </td>
         <td>
           <Toggle form={f} label='Work' offLabel='Personal' ariaLabel='Work expense'

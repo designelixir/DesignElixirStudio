@@ -57,7 +57,7 @@ export default function TransactionsTable({
   const showStatement = !!statements;
   const hasButtonColumn = !!topRow || editable || canAdd;
   const showAccountColumn = showAccount || showStatement;
-  const columnCount = 5 + (selectable ? 1 : 0) + (showAccountColumn ? 1 : 0) + (hasButtonColumn ? 1 : 0);
+  const columnCount = 6 + (selectable ? 1 : 0) + (showAccountColumn ? 1 : 0) + (hasButtonColumn ? 1 : 0);
 
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -182,6 +182,7 @@ export default function TransactionsTable({
             {showAccountColumn && <th>Account</th>}
             <th>Transaction</th>
             <th>Expense Category</th>
+            <th>Tags</th>
             <th>Work</th>
             <th style={{ textAlign: 'right' }}>Cost</th>
             {hasButtonColumn && <th></th>}
@@ -260,10 +261,11 @@ export default function TransactionsTable({
                   )}
                 </td>
                 <td>
-                  {/* Category, with the transaction's tags underneath */}
                   <div className='flex-center-start no-flex-grow'>{categoryCell(t)}</div>
+                </td>
+                <td>
                   {t.tags?.length > 0 && (
-                    <div className='flex-center-start flex-wrap' style={{ gap: '4px', marginTop: '4px', maxWidth: '200px' }}>
+                    <div className='flex-center-start flex-wrap' style={{ gap: '4px', maxWidth: '200px' }}>
                       {t.tags.map((tag) => <span key={tag} className='transaction-tag'>{tag}</span>)}
                     </div>
                   )}

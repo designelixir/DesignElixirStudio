@@ -1,5 +1,5 @@
 import type { PdfRow, PdfTextItem } from './pdfText';
-import { yearFor, moneyAfterLabel, type ParsedTransaction, type StatementPeriod, type StatementSummary } from './parserUtils';
+import { yearFor, type ParsedTransaction, type StatementPeriod } from './parserUtils';
 
 const FULL_DATE = /^(\d{2})\/(\d{2})\/(\d{2,4})$/; // 12/12/24 or 12/12/2024
 const SHORT_DATE = /^(\d{2})\/(\d{2})$/;           // 12/26
@@ -219,13 +219,4 @@ function findPrintedPeriod(rows: PdfRow[]): StatementPeriod | null {
     if (m) return { start: `${m[3]}-${m[1]}-${m[2]}`, end: `${m[6]}-${m[4]}-${m[5]}` };
   }
   return null;
-}
-
-// "Previous Balance $1,965.46" / "New Balance: $2,286.67" (monthly statements;
-// Account Activity exports don't print balances)
-export function readDiscoverSummary(rows: PdfRow[]): StatementSummary {
-  return {
-    previousBalance: moneyAfterLabel(rows, /previous balance/),
-    newBalance: moneyAfterLabel(rows, /new balance/),
-  };
 }

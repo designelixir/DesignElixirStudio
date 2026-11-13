@@ -11,20 +11,14 @@ interface EditStatementProps {
   onClose: () => void;
 }
 
-const toInput = (n: number | null) => (n === null ? '' : Number(n).toFixed(2));
-const fromInput = (s: string) => (s.trim() === '' ? null : Number(s));
 
-// Popup for editing a statement's details and balances. The opening balance
-// (previous balance) of an account's first statement can be used as the
-// account's opening balance.
+// Popup for editing a statement's details (name, account, period)
 export default function EditStatement({ statement, accounts, onSaved, onClose }: EditStatementProps) {
   const [formData, setFormData] = useState(() => ({
     name: statement.name ?? '',
     account_id: statement.account_id,
     period_start: statement.period_start ?? '',
     period_end: statement.period_end ?? '',
-    previous_balance: toInput(statement.previous_balance),
-    new_balance: toInput(statement.new_balance),
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -43,8 +37,6 @@ export default function EditStatement({ statement, accounts, onSaved, onClose }:
         account_id: formData.account_id,
         period_start: formData.period_start || null,
         period_end: formData.period_end || null,
-        previous_balance: fromInput(formData.previous_balance),
-        new_balance: fromInput(formData.new_balance),
       });
       onSaved();
     } catch (err) {
@@ -108,34 +100,6 @@ export default function EditStatement({ statement, accounts, onSaved, onClose }:
               />
             </div>
           </div>
-
-          <div className='flex-start-start'>
-            <div className='flex-start-start flex-column form-input-wrapper'>
-              <label>Opening balance ($)</label>
-              <input
-                type='number'
-                step='0.01'
-                value={formData.previous_balance}
-                onChange={(e) => setFormData({ ...formData, previous_balance: e.target.value })}
-                placeholder='Balance at the start'
-              />
-            </div>
-            <div className='flex-start-start flex-column form-input-wrapper'>
-              <label>Closing balance ($)</label>
-              <input
-                type='number'
-                step='0.01'
-                value={formData.new_balance}
-                onChange={(e) => setFormData({ ...formData, new_balance: e.target.value })}
-                placeholder='Balance at the end'
-              />
-            </div>
-          </div>
-          <p style={{ margin: '0 10px', color: '#666', fontSize: '12px', maxWidth: '460px' }}>
-            For cards, what you owed. Statements that print these (“Previous Balance” / “New Balance”) fill them in
-            when parsed; Account Activity exports don&apos;t, so enter them here. The first statement&apos;s opening
-            balance can become the account&apos;s opening balance (Edit Account on the account page).
-          </p>
 
           {error && <div style={{ color: 'red', margin: '10px' }}>{error}</div>}
 

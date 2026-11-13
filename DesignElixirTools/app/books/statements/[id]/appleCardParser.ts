@@ -35,7 +35,9 @@ type Section = 'none' | 'payments' | 'transactions' | 'installments' | 'interest
 
   Monthly installments and interest have no date of their own this month, so
   they're dated the last day of the period ("Jan 1 — Jan 31, 2026").
-  Daily Cash is a reward, not a charge, so it's left out.
+  Daily Cash is a reward, not a charge, so it's left out: "Promo Daily Cash",
+  "Daily Cash Adjustment", and anything whose only dollar figure is in the Daily
+  Cash column.
 */
 export function parseAppleCardRows(rows: PdfRow[], fallbackPeriod?: StatementPeriod): ParsedTransaction[] {
   const period = findPrintedPeriod(rows) ?? fallbackPeriod ?? { start: null, end: null };
@@ -45,9 +47,13 @@ export function parseAppleCardRows(rows: PdfRow[], fallbackPeriod?: StatementPer
   let section: Section = 'none';
   let current: ParsedTransaction | null = null;
   let descriptionX: number | null = null;
-  let lastDate: string | null = null; // for undated lines like "Daily Cash Adjustment"
-  // Where the Daily Cash columns start (description text is left of this)
+  let lastDate: string | null = null; // for undated lines that belong to the line above
+  // Where the Daily Cash and Amount columns start (description text is left of Daily Cash)
   let dailyCashX: number | null = null;
+  let amountX: number | null = null;
+  // Daily Cash Adjustments the statement's balance includes but we leave out,
+  // so the installment check below still adds up
+  let ignoredAdjustments = 0;
   // An installment purchase, waiting for its "This month's installment" line
   let installment: { descriptor: string; details: string[]; added: ParsedTransaction | null } | null = null;
 
@@ -75,6 +81,7 @@ export function parseAppleCardRows(rows: PdfRow[], fallbackPeriod?: StatementPer
     // Column header: "Date  Description  Daily Cash  Amount"
     if (lower.startsWith('date') && lower.includes('description')) {
       dailyCashX = row.items.find((i) => i.str.toLowerCase().startsWith('daily cash'))?.x ?? null;
+      amountX = row.items.find((i) => i.str.toLowerCase().startsWith('amount'))?.x ?? null;
       continue;
     }
 
@@ -94,6 +101,20 @@ export function parseAppleCardRows(rows: PdfRow[], fallbackPeriod?: StatementPer
     const amount = last ? money(last.str) : null;
 
     if (section === 'payments' || section === 'transactions') {
+      // Daily Cash is a reward paid to you, not part of the card's purchases or
+      // payments. "Promo Daily Cash 3% $6.75" (and some "Daily Cash Adjustment"
+      // lines) only have a dollar figure in the Daily Cash column, so skip any
+      // line whose only money isn't in the Amount column.
+      // "Daily Cash Adjustment" lines (Apple clawing back Daily Cash) are ignored
+      // too: they aren't payments or purchases.
+      const inAmount = amount !== null && !!last && inAmountColumn(last.x, dailyCashX, amountX);
+      if (/daily cash adjustment/i.test(text)) {
+        if (inAmount) ignoredAdjustments += amount!;
+        continue;
+      }
+      if (/^promo daily cash/i.test(text) || (amount !== null && !inAmount)) {
+        continue;
+      }
       if (date && amount !== null && items.length >= 3) {
         const middle = items.slice(1, -1);
         const descriptionItems = dailyCashX !== null ? middle.filter((i) => i.x < dailyCashX! - 5) : middle;
@@ -110,9 +131,7 @@ export function parseAppleCardRows(rows: PdfRow[], fallbackPeriod?: StatementPer
         transactions.push(current);
         continue;
       }
-      // Undated line with an amount, e.g. "Daily Cash Adjustment  -2%  $2.72" (Apple
-      // taking back Daily Cash after a return). It's a real charge; date it like
-      // the line above.
+      // Undated line with an amount in the Amount column; date it like the line above
       if (
         !date && amount !== null && lastDate && descriptionX !== null && first &&
         Math.abs(first.x - descriptionX) < 10
@@ -192,7 +211,8 @@ export function parseAppleCardRows(rows: PdfRow[], fallbackPeriod?: StatementPer
     const others = transactions
       .filter((t) => t !== installments[0])
       .reduce((sum, t) => sum + t.amount, 0);
-    const leftOver = Math.round((summary.newBalance - summary.previousBalance - others) * 100) / 100;
+    const leftOver =
+      Math.round((summary.newBalance - summary.previousBalance - others - ignoredAdjustments) * 100) / 100;
     const printed = installments[0].amount;
     if (leftOver > 0 && leftOver < printed) {
       installments[0].amount = leftOver;
@@ -206,6 +226,15 @@ export function parseAppleCardRows(rows: PdfRow[], fallbackPeriod?: StatementPer
   }
 
   return transactions;
+}
+
+// Is a dollar figure at x in the Amount column (rather than the Daily Cash
+// column to its left)? Amounts are right-aligned, so long ones start a little
+// left of the "Amount" heading; anything past halfway between the two
+// headings counts. Without both headings, assume it is.
+function inAmountColumn(x: number, dailyCashX: number | null, amountX: number | null): boolean {
+  if (dailyCashX === null || amountX === null) return true;
+  return x > (dailyCashX + amountX) / 2;
 }
 
 // Finds "Jan 1 — Jan 31, 2026" (or "Dec 1, 2025 — Dec 31, 2025") in the page header

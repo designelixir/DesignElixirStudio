@@ -26,6 +26,7 @@ const navItems: NavItem[] = [
       { title: "Statements", href: "/books/statements" },
       { title: "Expenses", href: "/books/expenses" },
       { title: "Expense Categories", href: "/books/categories" },
+      { title: "Identifiers", href: "/books/identifiers" },
     ],
   },
 ];

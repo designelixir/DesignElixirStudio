@@ -5,28 +5,23 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Account, ExpenseCategory, Statement, Transaction } from '@/types/globalTypes';
 import { fetchAccountAction } from '@/app/actions/accountActions';
-import {
-  fetchStatementsAction,
-  getStatementFileUrlAction,
-  updateStatementAction,
-} from '@/app/actions/statementActions';
+import { fetchStatementsAction } from '@/app/actions/statementActions';
 import { fetchFilteredTransactionsAction } from '@/app/actions/transactionActions';
 import { fetchExpenseCategoriesAction } from '@/app/actions/expenseCategoryActions';
-import { extractPdfRows } from '@/app/books/statements/[id]/pdfText';
-import { formatForBrand } from '@/app/books/statements/[id]/statementFormats';
 import { formatDay } from '@/app/books/statements/formatDay';
 import MiniCreditCard from '../../MiniCreditCard';
 import TransactionsBrowser from '../../TransactionsBrowser';
 import AddAccount from '../AddAccount';
+import UploadStatement from '../../statements/UploadStatement';
+import Tabs from '@/app/components/Tabs';
 import LoanSummary from './LoanSummary';
+import StatementCoverage from './StatementCoverage';
 import { totalsFor } from '../AccountsSummary';
 import { computeLoanHistory } from '../loanInterest';
 import {
   computeBalance,
   isOwedBalance,
   localDay,
-  reconcileStatement,
-  suggestOpeningBalance,
 } from '../accountBalance';
 import BooksHeader, { BOOKS_CRUMB } from '../../BooksHeader';
 
@@ -42,8 +37,6 @@ export default function AccountPage() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
-  // Progress while reading balances out of statement PDFs
-  const [readingBalances, setReadingBalances] = useState<{ done: number; total: number } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -109,54 +102,35 @@ export default function AccountPage() {
   const countedSince = transactions.filter(
     (t) => !account.opening_balance_date || localDay(t.date) > account.opening_balance_date
   ).length;
-  const suggestion = suggestOpeningBalance(account, statements);
-  const format = formatForBrand(account.brand);
-  const missingBalances = statements.filter((s) => s.previous_balance === null || s.new_balance === null);
-
-  // Reads Previous / New Balance out of each statement PDF that doesn't have them yet
-  const readBalancesFromPdfs = async () => {
-    if (!format) return;
-    setReadingBalances({ done: 0, total: missingBalances.length });
-    setError('');
-    try {
-      for (const [i, s] of missingBalances.entries()) {
-        const url = await getStatementFileUrlAction(s.file_path);
-        const summary = format.summarize(await extractPdfRows(url));
-        if (summary.previousBalance !== null || summary.newBalance !== null) {
-          await updateStatementAction(s.id, {
-            previous_balance: summary.previousBalance,
-            new_balance: summary.newBalance,
-          });
-        }
-        setReadingBalances({ done: i + 1, total: missingBalances.length });
-      }
-      await load();
-    } catch (err) {
-      console.error('Error reading statement balances:', err);
-      setError(err instanceof Error ? err.message : 'Could not read statement balances');
-    } finally {
-      setReadingBalances(null);
-    }
-  };
-
   return (
     <div className='full-width basic-padding'>
       <BooksHeader
         crumbs={crumbs}
         title={account.brand ? `${account.brand} ${account.name}` : account.name}
-        actions={<button type='button' onClick={() => setEditing(true)}>Edit Account</button>}
+        actions={
+          <>
+          <div className='flex-center-end'>
+            <button type='button' onClick={() => setEditing(true)}>Edit Account</button>
+            <UploadStatement accounts={[account]} defaultAccountId={account.id} onUploaded={load} />
+            </div>
+          </>
+        }
       />
 
       {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
 
       {/* Balance */}
-      <div className='flex-start-start flex-wrap' style={{ gap: '20px', marginBottom: '25px' }}>
+      <div className='flex-start-start' style={{ gap: '20px', marginBottom: '25px' }}>
         <div style={{ pointerEvents: 'none' }}>
           <MiniCreditCard accountId={account.id} account={account} />
         </div>
         <div className='card' style={{ background: 'white', maxWidth: '420px' }}>
           <h6 style={{ margin: 0 }}>{owed ? 'Balance owed' : 'Balance'}</h6>
           <h1 style={{ margin: '5px 0' }}>{currency.format(balance)}</h1>
+          <div style={{ color: '#666', fontSize: '13px' }}>
+            {account.interest_rate != null && <p style={{ margin: 0 }}>{Number(account.interest_rate)}% APR</p>}
+            {account.payment_day != null && <p style={{ margin: 0 }}>Payment due day {account.payment_day}</p>}
+          </div>
           {hasOpening ? (
             <p style={{ margin: 0, color: '#666', fontSize: '13px' }}>
               {currency.format(Number(account.opening_balance))} on {formatDay(account.opening_balance_date)} +{' '}
@@ -170,114 +144,98 @@ export default function AccountPage() {
               <button type='button' onClick={() => setEditing(true)}>Set opening balance</button>
             </div>
           )}
+          
         </div>
-        <div className='card flex-start-start' style={{ background: 'white', gap: '30px', flex: 'none' }}>
-          <div>
-            <h6 style={{ margin: 0 }}>Spent</h6>
-            <h2 style={{ margin: '5px 0 0' }}>{currency.format(totals.spent)}</h2>
-          </div>
-          <div>
-            <h6 style={{ margin: 0 }}>Paid</h6>
-            <h2 style={{ margin: '5px 0 0', color: '#3a9d4f' }}>{currency.format(totals.paid)}</h2>
-          </div>
-          {account.loan && (
-            <div>
-              <h6 style={{ margin: 0 }}>Interest</h6>
-              <h2 style={{ margin: '5px 0 0', color: '#b35c00' }}>{currency.format(totals.interest)}</h2>
-            </div>
-          )}
-        </div>
-        <div style={{ color: '#666', fontSize: '13px' }}>
-          {account.interest_rate != null && <p style={{ margin: 0 }}>{Number(account.interest_rate)}% APR</p>}
-          {account.payment_day != null && <p style={{ margin: 0 }}>Payment due day {account.payment_day}</p>}
-        </div>
+        <StatementCoverage statements={statements} />
+        
+        
       </div>
 
       {account.loan && <LoanSummary account={account} transactions={transactions} />}
 
-      {/* Statements, with a check that transactions add up to each printed balance */}
-      {statements.length > 0 && (
-        <div style={{ marginBottom: '30px' }}>
-          <div className='flex-center-spacebetween'>
-            <h2 style={{ margin: 0 }}>Statements</h2>
-            {missingBalances.length > 0 && format && (
-              <button type='button' onClick={readBalancesFromPdfs} disabled={!!readingBalances}>
-                {readingBalances
-                  ? `Reading ${readingBalances.done} / ${readingBalances.total}...`
-                  : `Read balances from ${missingBalances.length} PDF${missingBalances.length === 1 ? '' : 's'}`}
-              </button>
-            )}
-          </div>
-          {missingBalances.length > 0 && !format && (
-            <p style={{ color: '#666', fontSize: '12px' }}>
-              No statement format matches the brand “{account.brand ?? ''}”, so balances can&apos;t be read from these PDFs.
-            </p>
-          )}
-          <table style={{ marginTop: '10px' }}>
-            <thead>
-              <tr>
-                <th>Statement</th>
-                <th>Period</th>
-                <th style={{ textAlign: 'right' }}>Previous balance</th>
-                <th style={{ textAlign: 'right' }}>New balance (statement)</th>
-                <th style={{ textAlign: 'right' }}>Calculated</th>
-                <th>Check</th>
-              </tr>
-            </thead>
-            <tbody>
-              {statements.map((s) => {
-                const check = hasOpening ? reconcileStatement(account, s, transactions) : null;
-                const beforeOpening =
-                  account.opening_balance_date && s.period_end && s.period_end <= account.opening_balance_date;
-                return (
-                  <tr key={s.id}>
-                    <td><Link href={`/books/statements/${s.id}`}>{s.name || s.file_name}</Link></td>
-                    <td style={{ whiteSpace: 'nowrap' }}>{formatDay(s.period_start)} – {formatDay(s.period_end)}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      {s.previous_balance !== null ? currency.format(Number(s.previous_balance)) : '—'}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      {s.new_balance !== null ? currency.format(Number(s.new_balance)) : '—'}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>{check && !beforeOpening ? currency.format(check.calculated) : '—'}</td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      {!hasOpening ? (
-                        <span style={{ color: '#999' }}>Needs opening balance</span>
-                      ) : beforeOpening ? (
-                        <span style={{ color: '#999' }}>Before opening balance</span>
-                      ) : !check ? (
-                        <span style={{ color: '#999' }}>No printed balance</span>
-                      ) : check.difference === 0 ? (
-                        <span style={{ color: '#3a9d4f' }}>✓ Matches</span>
-                      ) : (
-                        <span style={{ color: '#b35c00' }} title='Calculated minus statement'>
-                          Off by {currency.format(check.difference)}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Transactions */}
-      <h2>Transactions</h2>
-      <TransactionsBrowser
-        transactions={transactions}
-        statements={statements}
-        categories={categories}
-        emptyMessage='No transactions for this account yet.'
-        onTransactionUpdated={load}
-        exportContext={{ accounts: account ? [account] : [] }}
+      
+      <Tabs
+        tabs={[
+          {
+            name: `Statements (${statements.length})`,
+            content:
+              statements.length === 0 ? (
+                <div style={{backgroundColor: 'white'}}>
+                <p style={{ color: '#666' }}>No statements yet. Use Import Statement above to upload one.</p>
+                </div>
+              ) : (
+                <div style={{backgroundColor: 'white'}}>
+                  <table>
+                  <thead>
+                    <tr>
+                      <th>Statement</th>
+                      <th>Start</th>
+                      <th>End</th>
+                      <th style={{ textAlign: 'right' }}>Transactions</th>
+                      <th style={{ textAlign: 'right' }}>Spend</th>
+                      <th style={{ textAlign: 'right' }}>Payments</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {statements.map((s) => {
+                      const lines = transactions.filter((t) => t.statement_id === s.id);
+                      const spend = lines.filter((t) => t.purchase).reduce((sum, t) => sum + Number(t.cost), 0);
+                      const payments = lines.filter((t) => !t.purchase).reduce((sum, t) => sum + Number(t.cost), 0);
+                      const imported = s.status === 'imported';
+                      return (
+                        <tr key={s.id}>
+                          <td>
+                            <span className='flex-center-start no-flex-grow' style={{ gap: '8px' }}>
+                              {/* Green: transactions imported · orange: only uploaded */}
+                              <span
+                                title={imported ? 'Imported' : 'Uploaded, not imported yet'}
+                                aria-label={imported ? 'Imported' : 'Uploaded, not imported yet'}
+                                style={{
+                                  width: '10px',
+                                  height: '10px',
+                                  borderRadius: '50%',
+                                  flex: 'none',
+                                  background: imported ? '#3a9d4f' : '#f28e2b',
+                                }}
+                              />
+                              <Link href={`/books/statements/${s.id}`}>{s.name || s.file_name}</Link>
+                            </span>
+                          </td>
+                          <td style={{ whiteSpace: 'nowrap' }}>{formatDay(s.period_start)}</td>
+                          <td style={{ whiteSpace: 'nowrap' }}>{formatDay(s.period_end)}</td>
+                          <td style={{ textAlign: 'right' }}>{lines.length}</td>
+                          <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{currency.format(spend)}</td>
+                          <td style={{ textAlign: 'right', whiteSpace: 'nowrap', color: payments > 0 ? '#3a9d4f' : undefined }}>
+                            {currency.format(payments)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  </table>
+                </div>
+              ),
+          },
+          {
+            name: `Transactions (${transactions.length})`,
+            content: (
+              <TransactionsBrowser
+                transactions={transactions}
+                statements={statements}
+                categories={categories}
+                emptyMessage='No transactions for this account yet.'
+                onTransactionUpdated={load}
+                exportContext={{ accounts: account ? [account] : [] }}
+              />
+            ),
+          },
+        ]}
       />
+      
 
       {editing && (
         <AddAccount
           account={account}
-          suggestedOpening={suggestion}
           onAccountCreated={() => {
             setEditing(false);
             load();

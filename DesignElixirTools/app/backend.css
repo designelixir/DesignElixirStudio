@@ -288,8 +288,8 @@ td h3 {font-weight: 400;}
 
 /* Tabs Component */
 .tabs-container { width: 100%; }
-.tabs-content { overflow-x: scroll}
-.tabs-header { display: flex; gap: 4px; border-bottom: 2px solid #e0e0e0; margin-bottom: 20px; }
+.tabs-content { overflow-x: scroll; background: white; }
+.tabs-header { display: flex; gap: 4px; border-bottom: 2px solid #e0e0e0; }
 
 /* Task Card */
 .overdue { background: rgba(226, 63, 36, 0.75)!important}

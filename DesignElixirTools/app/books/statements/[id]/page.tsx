@@ -14,6 +14,7 @@ import EditStatement from './EditStatement';
 import ParseChase from './ParseChase';
 import ParseAppleCard from './ParseAppleCard';
 import { StatementParserProps } from './parserTypes';
+import { formatKeyForAccount } from './statementFormats';
 import BooksHeader, { BOOKS_CRUMB } from '../../BooksHeader';
 
 // Add a new statement format here and it shows up in the dropdown
@@ -35,6 +36,8 @@ export default function StatementSinglePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [parserKey, setParserKey] = useState('');
+  // Set when the parser was started automatically (from the account's setting or brand)
+  const [autoParsed, setAutoParsed] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
 
@@ -55,9 +58,16 @@ export default function StatementSinglePage() {
         setCategories(cats);
         setStatement(stmt);
         setAccounts(accounts);
-        setAccount(accounts.find((a) => a.id === stmt.account_id) ?? null);
+        const acct = accounts.find((a) => a.id === stmt.account_id) ?? null;
+        setAccount(acct);
         setPdfUrl(url);
         setTransactions(txns);
+        // Nothing logged from this statement yet: run the account's parser straight away
+        const autoKey = txns.length === 0 ? formatKeyForAccount(acct) : null;
+        if (autoKey && PARSERS[autoKey]) {
+          setParserKey(autoKey);
+          setAutoParsed(true);
+        }
       } catch (err) {
         console.error('Error loading statement:', err);
         setError(err instanceof Error ? err.message : 'Failed to load statement');
@@ -111,20 +121,31 @@ export default function StatementSinglePage() {
   return (
     <div className='full-width basic-padding'>
         <BooksHeader
-            crumbs={[BOOKS_CRUMB, { label: 'Statements', href: '/books/statements' }]}
+            // Books | Accounts | <this statement's account> | statement
+            crumbs={
+                account
+                    ? [
+                          BOOKS_CRUMB,
+                          { label: 'Accounts', href: '/books/accounts' },
+                          { label: account.brand ? `${account.brand} ${account.name}` : account.name, href: `/books/accounts/${account.id}` },
+                      ]
+                    : [BOOKS_CRUMB, { label: 'Statements', href: '/books/statements' }]
+            }
             title={statement ? statement.name || statement.file_name : loading ? 'Loading...' : 'Statement'}
             subtitle={statement && (
                 <>
                     <h6> {account?.name ?? '—'} · {formatDay(statement.period_start)} – {formatDay(statement.period_end)} ·{' '} <span style={{ textTransform: 'capitalize' }}>{statement.status}</span> </h6>
-                    <h6 style={{ margin: 0 }}>
-                        Opening {statement.previous_balance !== null ? currency.format(Number(statement.previous_balance)) : '—'} →
-                        closing {statement.new_balance !== null ? currency.format(Number(statement.new_balance)) : '—'}
-                    </h6>
                 </>
             )}
             actions={
                 <>
-                    <select value={parserKey} onChange={(e) => setParserKey(e.target.value)}>
+                    <select
+                        value={parserKey}
+                        onChange={(e) => {
+                            setParserKey(e.target.value);
+                            setAutoParsed(false);
+                        }}
+                    >
                         <option value=''>Select Statement Parser</option>
                         {Object.entries(PARSERS).map(([key, p]) => (
                             <option key={key} value={key}>{p.label}</option>
@@ -155,6 +176,17 @@ export default function StatementSinglePage() {
         </div>
     )}
 
+    {statement && Parser && autoParsed && (
+        <p style={{ color: '#666', fontSize: '12px', margin: '0 0 5px' }}>
+            Parsed automatically with {PARSERS[parserKey].label}
+            {account?.statement_parser ? ' (set on the account)' : ' (from the account’s brand)'}.
+        </p>
+    )}
+    {statement && !Parser && !loading && transactions.length > 0 && (
+        <p style={{ color: '#666', fontSize: '12px' }}>
+            This statement’s transactions are already logged. Pick a parser above to read the PDF again.
+        </p>
+    )}
     {statement && Parser && <Parser statement={statement} pdfUrl={pdfUrl} existingTransactions={transactions} onImported={handleImported} />}
       
 

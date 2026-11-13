@@ -3,25 +3,16 @@
 import { useState, FormEvent } from 'react';
 import { Account } from '@/types/globalTypes';
 import { createAccountAction, updateAccountAction } from '@/app/actions/accountActions';
-
-// An opening balance read from a statement, offered as a one-click fill
-export interface OpeningBalanceSuggestion {
-  balance: number;
-  date: string;   // YYYY-MM-DD (the day before the statement period starts)
-  source: string; // e.g. the statement's name
-}
+import { STATEMENT_FORMATS, formatForBrand } from '../statements/[id]/statementFormats';
 
 interface AddAccountProps {
   account?: Account; // pass to edit; leave out to add a new account
-  suggestedOpening?: OpeningBalanceSuggestion | null;
   onAccountCreated: () => void; // called after saving (add or edit)
   onClose: () => void;
 }
 
-const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-
 // Popup for adding or editing an account
-export default function AddAccount({ account, suggestedOpening, onAccountCreated, onClose }: AddAccountProps) {
+export default function AddAccount({ account, onAccountCreated, onClose }: AddAccountProps) {
   const isEditing = !!account;
   const [formData, setFormData] = useState(() => ({
     name: account?.name ?? '',
@@ -37,7 +28,9 @@ export default function AddAccount({ account, suggestedOpening, onAccountCreated
     payment_frequency: account?.payment_frequency ?? 'monthly',
     term_months: account?.term_months != null ? String(account.term_months) : '',
     loan_start_date: account?.loan_start_date ?? '',
+    statement_parser: account?.statement_parser ?? '', // '' = pick from the brand
   }));
+  const brandFormat = formatForBrand(formData.brand);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -84,6 +77,7 @@ export default function AddAccount({ account, suggestedOpening, onAccountCreated
       payment_frequency: formData.loan ? (formData.payment_frequency as 'monthly' | 'biweekly' | 'weekly') : null,
       term_months: formData.loan && formData.term_months !== '' ? Number(formData.term_months) : null,
       loan_start_date: formData.loan ? formData.loan_start_date || null : null,
+      statement_parser: formData.statement_parser || null,
     };
 
     try {
@@ -125,6 +119,19 @@ export default function AddAccount({ account, suggestedOpening, onAccountCreated
                 onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                 placeholder='e.g., Chase'
               />
+            </div>
+            <div className='flex-start-start flex-column form-input-wrapper'>
+              <label>Statement parser</label>
+              <select
+                value={formData.statement_parser}
+                onChange={(e) => setFormData({ ...formData, statement_parser: e.target.value })}
+                title='Runs automatically when you open one of this account’s statements'
+              >
+                <option value=''>{brandFormat ? `Auto (${brandFormat.label}, from brand)` : 'None'}</option>
+                {Object.entries(STATEMENT_FORMATS).map(([key, f]) => (
+                  <option key={key} value={key}>{f.label}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -265,25 +272,6 @@ export default function AddAccount({ account, suggestedOpening, onAccountCreated
               />
             </div>
           </div>
-          {suggestedOpening && (
-            <div className='form-input-wrapper'>
-              <button
-                type='button'
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    opening_balance: suggestedOpening.balance.toFixed(2),
-                    opening_balance_date: suggestedOpening.date,
-                  })
-                }
-              >
-                Use {currency.format(suggestedOpening.balance)} as of {suggestedOpening.date}
-              </button>
-              <span style={{ color: '#666', fontSize: '12px', marginLeft: '8px' }}>
-                Previous balance on “{suggestedOpening.source}”
-              </span>
-            </div>
-          )}
 
           {error && <div style={{ color: 'red', margin: '10px' }}>{error}</div>}
 

@@ -7,15 +7,17 @@ import {
   createStatementUploadUrlAction,
   createStatementAction,
 } from '@/app/actions/statementActions';
+import { statementName } from './statementName';
 
 interface UploadStatementProps {
   accounts: Account[];
   onUploaded: () => void;
+  defaultAccountId?: string; // pre-picks this account in the form (e.g. on its own page)
 }
 
-const emptyForm = { name: '', account_id: '', period_start: '', period_end: '' };
+const emptyForm = { account_id: '', period_start: '', period_end: '' };
 
-export default function UploadStatement({ accounts, onUploaded }: UploadStatementProps) {
+export default function UploadStatement({ accounts, onUploaded, defaultAccountId }: UploadStatementProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -32,7 +34,7 @@ export default function UploadStatement({ accounts, onUploaded }: UploadStatemen
     }
     setFile(chosen);
     setError('');
-    setFormData({ ...emptyForm, name: chosen.name.replace(/\.pdf$/i, '') });
+    setFormData({ ...emptyForm, account_id: defaultAccountId ?? '' });
   };
 
   const cancelUpload = () => {
@@ -40,6 +42,13 @@ export default function UploadStatement({ accounts, onUploaded }: UploadStatemen
     setFormData(emptyForm);
     setError('');
   };
+
+  // Named from the account and period, e.g. "Chase8223-Oct-Nov-2026"
+  const name = statementName(
+    accounts.find((a) => a.id === formData.account_id),
+    formData.period_start,
+    formData.period_end
+  );
 
   const handleSave = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -62,7 +71,7 @@ export default function UploadStatement({ accounts, onUploaded }: UploadStatemen
 
       // 2. Save the statement's details
       await createStatementAction({
-        name: formData.name.trim() || file.name,
+        name: name ?? file.name.replace(/\.pdf$/i, ''),
         account_id: formData.account_id,
         file_path: path,
         file_name: file.name,
@@ -107,16 +116,6 @@ export default function UploadStatement({ accounts, onUploaded }: UploadStatemen
 
           <div className='flex-start-start'>
             <div className='flex-start-start flex-column form-input-wrapper'>
-              <label>Statement Name *</label>
-              <input
-                type='text'
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder='e.g., Chase Sapphire – Oct 2026'
-              />
-            </div>
-            <div className='flex-start-start flex-column form-input-wrapper'>
               <label>Account *</label>
               <select
                 required
@@ -151,6 +150,10 @@ export default function UploadStatement({ accounts, onUploaded }: UploadStatemen
               />
             </div>
           </div>
+
+          <p style={{ margin: '0 10px', color: '#666', fontSize: '12px' }}>
+            {name ? <>Saved as <strong>{name}</strong></> : 'Pick the account and dates to name it.'}
+          </p>
 
           {error && <div style={{ color: 'red', margin: '10px' }}>{error}</div>}
 

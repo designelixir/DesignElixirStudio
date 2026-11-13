@@ -373,6 +373,7 @@ export interface Account {
   payment_frequency: 'monthly' | 'biweekly' | 'weekly' | null;
   term_months: number | null;      // how long the loan runs
   loan_start_date: string | null;  // YYYY-MM-DD; with term_months, gives the scheduled payoff date
+  statement_parser: string | null; // STATEMENT_FORMATS key to auto-run on statements; null = from brand
 }
 
 export interface Transaction {
@@ -395,6 +396,25 @@ export interface Transaction {
   reconciled: number | null;          // amount paid back; spending counts cost − this
 }
 
+// A company as it appears on statements, with the bank descriptors matched to it
+export interface StatementCompany {
+  id: string;
+  created_at: string;
+  name: string;
+  descriptors: string[];                // bank descriptors linked to this company
+  default_category_id: string | null;   // applied to matching parsed lines
+  default_work_expense: boolean | null; // true = work, false = personal, null = no default
+  phrases: StatementCompanyPhrase[];     // descriptor phrases, each with its own defaults
+}
+
+// A piece of text to look for in statement descriptors (ignoring case). Lines
+// containing it are this company, with these defaults.
+export interface StatementCompanyPhrase {
+  phrase: string;
+  default_category_id: string | null;
+  default_work_expense: boolean | null;
+}
+
 export interface Statement {
   id: string;
   created_at: string;
@@ -406,8 +426,6 @@ export interface Statement {
   period_start: string | null; // YYYY-MM-DD
   period_end: string | null;   // YYYY-MM-DD
   status: string;
-  previous_balance: number | null; // as printed on the statement
-  new_balance: number | null;      // as printed on the statement
 }
 
 export interface ExpenseCategory {

@@ -1,5 +1,5 @@
 import type { PdfRow } from './pdfText';
-import { yearFor, moneyAfterLabel, type ParsedTransaction, type StatementPeriod, type StatementSummary } from './parserUtils';
+import { yearFor, type ParsedTransaction, type StatementPeriod } from './parserUtils';
 
 const SHORT_DATE = /^(\d{2})\/(\d{2})$/;                   // 12/13
 // 9.31, -820.00, $37.95, and .21 (Chase drops the leading zero on cents-only amounts)
@@ -116,12 +116,4 @@ function findPrintedPeriod(rows: PdfRow[]): StatementPeriod | null {
     if (m) return { start: toIso(m[1], m[2], m[3]), end: toIso(m[4], m[5], m[6]) };
   }
   return null;
-}
-
-// "Previous Balance $3,053.94" / "New Balance $2,678.86" (Account Summary)
-export function readChaseSummary(rows: PdfRow[]): StatementSummary {
-  return {
-    previousBalance: moneyAfterLabel(rows, /previous balance/),
-    newBalance: moneyAfterLabel(rows, /new balance/),
-  };
 }

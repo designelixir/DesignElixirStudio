@@ -1,4 +1,4 @@
-import type { Account, Statement, Transaction } from '@/types/globalTypes';
+import type { Account, Transaction } from '@/types/globalTypes';
 
 // Local YYYY-MM-DD of a stored timestamp
 export function localDay(iso: string) {
@@ -60,27 +60,4 @@ export function computeAccountTotals(account: Account, transactions: Transaction
     balance: computeBalance(account, transactions),
     since: account.opening_balance_date,
   };
-}
-
-// The account's earliest statement that has a printed previous balance, as an
-// opening balance suggestion (dated the day before that statement starts)
-export function suggestOpeningBalance(account: Account, statements: Statement[]) {
-  const first = statements
-    .filter((s) => s.account_id === account.id && s.previous_balance !== null && s.period_start)
-    .sort((a, b) => (a.period_start! < b.period_start! ? -1 : 1))[0];
-  if (!first) return null;
-  return {
-    balance: Number(first.previous_balance),
-    date: dayBefore(first.period_start!),
-    source: first.name || first.file_name,
-  };
-}
-
-// Does the opening balance plus transactions through each statement's end
-// match the New Balance printed on it?
-export function reconcileStatement(account: Account, statement: Statement, transactions: Transaction[]) {
-  if (statement.new_balance === null || !statement.period_end) return null;
-  const calculated = computeBalance(account, transactions, statement.period_end);
-  const printed = Number(statement.new_balance);
-  return { calculated, printed, difference: round(calculated - printed) };
 }

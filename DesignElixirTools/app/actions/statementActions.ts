@@ -72,7 +72,7 @@ export async function fetchStatementAction(id: string): Promise<Statement | null
 export async function updateStatementAction(
   id: string,
   input: Partial<
-    Pick<Statement, 'name' | 'account_id' | 'period_start' | 'period_end' | 'status' | 'previous_balance' | 'new_balance'>
+    Pick<Statement, 'name' | 'account_id' | 'period_start' | 'period_end' | 'status'>
   >
 ) {
   await requireAuth();

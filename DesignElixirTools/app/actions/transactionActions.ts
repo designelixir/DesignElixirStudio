@@ -21,6 +21,51 @@ async function requireAuth() {
   return session;
 }
 
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+// Remembers that `descriptor` means `company` (statement_companies): adds it to
+// that company (creating the company if new) and takes it off any other company.
+// Never fails the save it's part of; problems are only logged.
+async function linkDescriptorToCompany(supabase: AdminClient, company: string | null | undefined, descriptor: string | null | undefined) {
+  const name = company?.trim();
+  const desc = descriptor?.trim().replace(/\s+/g, ' ');
+  if (!name || !desc) return;
+  try {
+    const { data: found, error } = await supabase
+      .from('statement_companies')
+      .select('id, descriptors')
+      .ilike('name', name.replace(/[%_\\]/g, '\\$&'));
+    if (error) throw error;
+    const target = found?.[0];
+    if (!target) {
+      const { error: insertError } = await supabase.from('statement_companies').insert([{ name, descriptors: [desc] }]);
+      if (insertError) throw insertError;
+    } else if (!(target.descriptors as string[]).some((d) => d.toLowerCase() === desc.toLowerCase())) {
+      const { error: updateError } = await supabase
+        .from('statement_companies')
+        .update({ descriptors: [...(target.descriptors as string[]), desc] })
+        .eq('id', target.id);
+      if (updateError) throw updateError;
+    }
+
+    // A descriptor belongs to one company: remove it from any other
+    const { data: others, error: othersError } = await supabase
+      .from('statement_companies')
+      .select('id, name, descriptors')
+      .contains('descriptors', [desc]);
+    if (othersError) throw othersError;
+    for (const o of others ?? []) {
+      if (o.name.trim().toLowerCase() === name.toLowerCase()) continue;
+      await supabase
+        .from('statement_companies')
+        .update({ descriptors: (o.descriptors as string[]).filter((d) => d !== desc) })
+        .eq('id', o.id);
+    }
+  } catch (err) {
+    console.error('Could not link descriptor to company:', err);
+  }
+}
+
 export async function fetchTransactionsAction(): Promise<Transaction[]> {
   await requireAuth();
   const supabase = createAdminClient();
@@ -41,14 +86,21 @@ export async function createTransactionAction(input: TransactionInput): Promise<
     .select()
     .single();
   if (error) throw new Error(error.message);
+  await linkDescriptorToCompany(supabase, data.company, data.statement_descriptor);
   return data;
 }
 
 export async function updateTransactionAction(id: string, input: Partial<TransactionInput>) {
   await requireAuth();
   const supabase = createAdminClient();
-  const { error } = await supabase.from('transactions').update(input).eq('id', id);
+  const { data, error } = await supabase
+    .from('transactions')
+    .update(input)
+    .eq('id', id)
+    .select('company, statement_descriptor')
+    .single();
   if (error) throw new Error(error.message);
+  await linkDescriptorToCompany(supabase, data.company, data.statement_descriptor);
 }
 
 export async function deleteTransactionAction(id: string) {
@@ -67,6 +119,8 @@ export async function createTransactionsAction(inputs: TransactionInput[]): Prom
   const supabase = createAdminClient();
   const { data, error } = await supabase.from('transactions').insert(inputs).select('id');
   if (error) throw new Error(error.message);
+  const pairs = new Map(inputs.map((i) => [`${i.company}|${i.statement_descriptor}`, i]));
+  for (const i of pairs.values()) await linkDescriptorToCompany(supabase, i.company, i.statement_descriptor);
   return data.length;
 }
 
@@ -133,6 +187,37 @@ export async function addTagToTransactionsAction(ids: string[], rawTag: string):
     if (failed?.error) throw new Error(failed.error.message);
   }
   return toUpdate.length;
+}
+
+export interface DescriptorHistoryRow {
+  statement_descriptor: string;
+  company: string | null;
+  expense_category_id: string | null;
+  work_expense: boolean;
+  date: string;
+}
+
+// Past transactions that have a bank descriptor plus a company or category,
+// newest first — used to fill in parsed statement lines that look the same
+export async function fetchDescriptorHistoryAction(): Promise<DescriptorHistoryRow[]> {
+  await requireAuth();
+  const supabase = createAdminClient();
+  const pageSize = 1000;
+  const all: DescriptorHistoryRow[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('statement_descriptor, company, expense_category_id, work_expense, date')
+      .not('statement_descriptor', 'is', null)
+      .or('company.not.is.null,expense_category_id.not.is.null')
+      .order('date', { ascending: false })
+      .order('id')
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(error.message);
+    all.push(...(data as DescriptorHistoryRow[]));
+    if (data.length < pageSize) break;
+  }
+  return all;
 }
 
 // Every tag used so far, for the tag field's suggestions. Pages through, since
